@@ -1,0 +1,6 @@
+[submodule "3dparty/glfw"]
+	path = 3dparty/glfw
+	url = https://github.com/glfw/glfw
+[submodule "3dparty/glm"]
+	path = 3dparty/glm
+	url = https://github.com/g-truc/glm
