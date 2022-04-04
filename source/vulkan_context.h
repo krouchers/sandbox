@@ -3,9 +3,9 @@
 #include <debug.h>
 #include <physicalDevice.h>
 #include <logical_device.h>
-#include <swapchain.h>
 #include <renderpass.h>
-#include <buffer.h>
+#include<glm/vec2.hpp>
+#include<glm/vec3.hpp>
 
 // std
 #include <vector>
@@ -16,6 +16,15 @@
 class swapchain;
 class graphic_pipeline;
 class application;
+template<typename T>
+class buffer;
+
+struct Vertex
+{
+    glm::vec2 position;
+    glm::vec3 color;
+};
+
 struct extAndLayerInfo
 {
     uint32_t layersCount;
@@ -38,9 +47,9 @@ private:
     std::unique_ptr<graphic_pipeline> _graphic_pipeline;
     std::unique_ptr<swapchain> _swapchain;
     std::unique_ptr<renderpass> _renderpass;
-    std::unique_ptr<buffer> _staged_vertex_buffer;
-    std::unique_ptr<buffer> _final_vertex_buffer;
-    std::unique_ptr<buffer> _index_buffer;
+    std::unique_ptr<buffer<Vertex>> _staged_vertex_buffer;
+    std::unique_ptr<buffer<Vertex>> _final_vertex_buffer;
+    std::unique_ptr<buffer<uint32_t>> _index_buffer;
     Window &window;
 
     void initPhysicalDevice() noexcept;
@@ -57,8 +66,8 @@ public:
 
     // geters
     VkInstance get_instance();
-    buffer &get_staged_vertex_buffer();
-    buffer &get_final_vertex_buffer();
+    buffer<Vertex> &get_staged_vertex_buffer();
+    buffer<Vertex> &get_final_vertex_buffer();
     Window &getWindow();
     physicalDevice &get_physical_device();
     swapchain &get_swapchain();
@@ -68,7 +77,7 @@ public:
     //
     // seters
     void add_vertex_data(std::vector<Vertex> &&data);
-    void set_vertex_data_to_buffer(buffer &buf, std::vector<Vertex> data);
+    void set_vertex_data_to_buffer(buffer<Vertex> &buf, std::vector<Vertex> data);
     //
     void device_idle();
     void destroy_staged_vertex_buffer();

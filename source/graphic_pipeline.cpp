@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include<buffer.h>
 
 graphic_pipeline::graphic_pipeline(vulkan_context &vk_cont) : _vk_context{vk_cont}
 {

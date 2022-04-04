@@ -2,6 +2,7 @@
 #include <swapchain.h>
 #include <graphic_pipeline.h>
 #include <application.h>
+#include<buffer.h>
 // std
 #include <stdexcept>
 #include <iostream>
@@ -159,7 +160,7 @@ vulkan_context::vulkan_context(Window &wnd, bool is_debug_en) : is_debug_enabled
     create_staged_vertex_buffer(500 * sizeof(Vertex));
     create_final_vertex_buffer(500 * sizeof(Vertex));
 }
-void vulkan_context::set_vertex_data_to_buffer(buffer &buf, std::vector<Vertex> data)
+void vulkan_context::set_vertex_data_to_buffer(buffer<Vertex> &buf, std::vector<Vertex> data)
 {
     buf.add_vertex_data(std::move(data));
 }
@@ -279,17 +280,17 @@ void vulkan_context::device_idle()
 
 void vulkan_context::create_staged_vertex_buffer(size_t size)
 {
-    _staged_vertex_buffer = std::make_unique<buffer>(
+    _staged_vertex_buffer = std::make_unique<buffer<Vertex>>(
         *this, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 }
 
-buffer &vulkan_context::get_staged_vertex_buffer()
+buffer<Vertex> &vulkan_context::get_staged_vertex_buffer()
 {
     return *_staged_vertex_buffer.get();
 }
 
-buffer &vulkan_context::get_final_vertex_buffer()
+buffer<Vertex> &vulkan_context::get_final_vertex_buffer()
 {
     return *_final_vertex_buffer.get();
 }
@@ -301,7 +302,7 @@ void vulkan_context::add_vertex_data(std::vector<Vertex> &&data)
 
 void vulkan_context::create_final_vertex_buffer(size_t size)
 {
-    _final_vertex_buffer = std::make_unique<buffer>(
+    _final_vertex_buffer = std::make_unique<buffer<Vertex>>(
         *this, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
@@ -317,7 +318,7 @@ void vulkan_context::destroy_final_vertex_buffer()
 
 void vulkan_context::create_index_buffer()
 {
-    _index_buffer = std::make_unique<buffer>(
+    _index_buffer = std::make_unique<buffer<uint32_t>>(
         *this, 6 * sizeof(uint16_t),
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
