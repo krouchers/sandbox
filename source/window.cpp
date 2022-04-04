@@ -17,7 +17,7 @@ Window::Window(int w, int h, std::string name)
     glfwSetFramebufferSizeCallback(_window, resizeCallBack);
     glfwSetCursorPosCallback(_window, cursorMovedCallBack);
     glfwSetWindowUserPointer(_window, this);
-    glfwSetMouseButtonCallback(_window, mauseButtonCallback);
+    // glfwetMouseButtonCallback(_window, mauseButtonCallback);
 }
 
 void Window::run()

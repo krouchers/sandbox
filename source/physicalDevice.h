@@ -26,10 +26,11 @@ public:
     {
         std::optional<uint32_t> graphicFamily;
         std::optional<uint32_t> presentFamily;
+        std::optional<uint32_t> transferFamily;
 
         bool isComplete()
         {
-            return graphicFamily && presentFamily;
+            return graphicFamily && presentFamily && transferFamily;
         }
     } queueFamilies;
 

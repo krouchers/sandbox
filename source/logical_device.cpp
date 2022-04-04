@@ -16,7 +16,8 @@ logical_device::logical_device(vulkan_context &vk_context) : _vk_context{vk_cont
 {
     std::set<uint32_t> uniqueQueueFamilies{
         _vk_context.get_physical_device().queueFamilies.graphicFamily.value(),
-        _vk_context.get_physical_device().queueFamilies.presentFamily.value()};
+        _vk_context.get_physical_device().queueFamilies.presentFamily.value(),
+        _vk_context.get_physical_device().queueFamilies.transferFamily.value()};
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     float queuePriority = 1.0f;
     for (auto queueFamily : uniqueQueueFamilies)
@@ -47,6 +48,7 @@ logical_device::logical_device(vulkan_context &vk_context) : _vk_context{vk_cont
 
     vkGetDeviceQueue(device, _vk_context.get_physical_device().queueFamilies.graphicFamily.value(), 0, _vk_context.get_swapchain().get_grapchic_queue());
     vkGetDeviceQueue(device, _vk_context.get_physical_device().queueFamilies.presentFamily.value(), 0, _vk_context.get_swapchain().get_present_queue());
+    vkGetDeviceQueue(device, _vk_context.get_physical_device().queueFamilies.transferFamily.value(), 0, _vk_context.get_swapchain().get_transfer_queue());
 #ifdef DEBUG
     std::cout << "Logical device is created" << std::endl;
 #endif

@@ -138,7 +138,8 @@ swapchain::~swapchain()
         vkDestroyFence(_vk_context.get_logical_device().get_vk_handler(), is_can_submit_work_to_GPU[i], nullptr);
     }
 
-    vkDestroyCommandPool(_vk_context.get_logical_device().get_vk_handler(), _command_pool, nullptr);
+    vkDestroyCommandPool(_vk_context.get_logical_device().get_vk_handler(), _graphic_command_pool, nullptr);
+    vkDestroyCommandPool(_vk_context.get_logical_device().get_vk_handler(), _transfer_command_pool, nullptr);
     destroy_image_views();
     vkDestroySwapchainKHR(_vk_context.get_logical_device().get_vk_handler(), _swapchain, nullptr);
     vkDestroySurfaceKHR(_vk_context.get_instance(), _surface, nullptr);
@@ -193,15 +194,22 @@ void swapchain::draw_frame()
     current_frame = (current_frame + 1) & _max_frames_in_flight;
 }
 
-void swapchain::create_command_pool()
+void swapchain::create_command_pools()
 {
-    VkCommandPoolCreateInfo info{};
-    info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    info.queueFamilyIndex = _vk_context.get_physical_device().queueFamilies.graphicFamily.value();
+    VkCommandPoolCreateInfo graphic_info{};
+    graphic_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    graphic_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    graphic_info.queueFamilyIndex = _vk_context.get_physical_device().queueFamilies.graphicFamily.value();
 
-    if (vkCreateCommandPool(_vk_context.get_logical_device().get_vk_handler(), &info, nullptr, &_command_pool) != VK_SUCCESS)
-        throw std::runtime_error("failed to create command pool");
+    VkCommandPoolCreateInfo transfer_info{};
+    transfer_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    transfer_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+    transfer_info.queueFamilyIndex = _vk_context.get_physical_device().queueFamilies.transferFamily.value();
+
+    if (vkCreateCommandPool(_vk_context.get_logical_device().get_vk_handler(), &graphic_info, nullptr, &_graphic_command_pool) != VK_SUCCESS)
+        throw std::runtime_error("failed to create graphic command pool");
+    if (vkCreateCommandPool(_vk_context.get_logical_device().get_vk_handler(), &transfer_info, nullptr, &_transfer_command_pool) != VK_SUCCESS)
+        throw std::runtime_error("failed to create transfer command pool");
 }
 
 void swapchain::create_image_views()
@@ -245,7 +253,7 @@ void swapchain::create_command_buffers()
 
     VkCommandBufferAllocateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    info.commandPool = _command_pool;
+    info.commandPool = _graphic_command_pool;
     info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     info.commandBufferCount = _command_buffers.size();
 
@@ -277,12 +285,12 @@ void swapchain::record_buffer(VkCommandBuffer command_buffer, uint32_t image_ind
     vkCmdBeginRenderPass(command_buffer, &renderpass_befin_info, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _vk_context.get_pipeline().get_vk_handle());
 
-    VkBuffer *vertex_buffers = _vk_context.get_vk_vertex_buffers();
+    VkBuffer *vertex_buffers = &_vk_context.get_final_vertex_buffer().get_vk_handler();
     VkDeviceSize offsets[] = {0};
 
     vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
 
-    vkCmdDraw(command_buffer, _vk_context.get_vertex_buffer().get_quantity_loaded_vertices(), 1, 0, 0);
+    vkCmdDraw(command_buffer, _vk_context.get_final_vertex_buffer().get_quantity_loaded_vertices(), 1, 0, 0);
     vkCmdEndRenderPass(command_buffer);
     if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS)
         throw std::runtime_error("failed to end frame buffer");
@@ -322,4 +330,24 @@ VkQueue *swapchain::get_grapchic_queue()
 VkQueue *swapchain::get_present_queue()
 {
     return &present_queue;
+}
+VkQueue *swapchain::get_transfer_queue()
+{
+    return &transfer_queue;
+}
+
+VkCommandPool &swapchain::get_command_pool(pool_type type)
+{
+    switch (type)
+    {
+    case GRAPHIC:
+        return _graphic_command_pool;
+        break;
+
+    case TRANSFER:
+        return _transfer_command_pool;
+        break;
+    default:
+        throw std::runtime_error("failed to get command pool");
+    }
 }

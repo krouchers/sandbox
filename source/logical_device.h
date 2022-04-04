@@ -11,6 +11,7 @@ class logical_device
     vulkan_context &_vk_context;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
+    VkQueue transferQueue;
 
 public:
     ~logical_device();

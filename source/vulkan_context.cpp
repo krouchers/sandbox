@@ -22,7 +22,8 @@ void vulkan_context::destroy_device()
 }
 vulkan_context::~vulkan_context()
 {
-    _vertex_buffer = nullptr;
+    _staged_vertex_buffer = nullptr;
+    _final_vertex_buffer = nullptr;
     _graphic_pipeline = nullptr;
     _renderpass = nullptr;
     debugMessenger = nullptr;
@@ -153,12 +154,31 @@ vulkan_context::vulkan_context(Window &wnd, bool is_debug_en) : is_debug_enabled
     renderpass_init();
     create_renderpass();
     create_graphic_pipeline();
-    create_command_buffer();
+    create_command_buffers();
     create_sync_objects();
+    create_staged_vertex_buffer(500 * sizeof(Vertex));
+    create_final_vertex_buffer(500 * sizeof(Vertex));
+}
+void vulkan_context::set_vertex_data_to_buffer(buffer &buf, std::vector<Vertex> data)
+{
+    buf.add_vertex_data(std::move(data));
 }
 
 void vulkan_context::draw_frame()
 {
+    create_staged_vertex_buffer(500 * sizeof(Vertex));
+    std::vector<Vertex> data = {
+        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+
+    const std::vector<uint16_t> indices = {
+        0, 1, 2, 2, 3, 0};
+
+    set_vertex_data_to_buffer(get_staged_vertex_buffer(), data);
+    get_final_vertex_buffer().copy_buffer(get_staged_vertex_buffer());
+    destroy_staged_vertex_buffer();
     _swapchain->draw_frame();
 }
 void vulkan_context::create_sync_objects()
@@ -241,9 +261,9 @@ renderpass &vulkan_context::get_renderpass()
     return *_renderpass.get();
 }
 
-void vulkan_context::create_command_buffer()
+void vulkan_context::create_command_buffers()
 {
-    _swapchain->create_command_pool();
+    _swapchain->create_command_pools();
     _swapchain->create_command_buffers();
 }
 
@@ -257,22 +277,52 @@ void vulkan_context::device_idle()
     vkDeviceWaitIdle(_p_logical_device->get_vk_handler());
 }
 
-void vulkan_context::create_vertex_input_buffer(size_t size)
+void vulkan_context::create_staged_vertex_buffer(size_t size)
 {
-    _vertex_buffer = std::make_unique<vertex_buffer>(*this, size);
+    _staged_vertex_buffer = std::make_unique<buffer>(
+        *this, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 }
 
-VkBuffer *vulkan_context::get_vk_vertex_buffers()
+buffer &vulkan_context::get_staged_vertex_buffer()
 {
-    return _vertex_buffer->get_vertex_buffers();
+    return *_staged_vertex_buffer.get();
 }
 
-vertex_buffer &vulkan_context::get_vertex_buffer()
+buffer &vulkan_context::get_final_vertex_buffer()
 {
-    return *_vertex_buffer.get();
+    return *_final_vertex_buffer.get();
 }
 
 void vulkan_context::add_vertex_data(std::vector<Vertex> &&data)
 {
-    _vertex_buffer->add_vertex_data(std::move(data));
+    _staged_vertex_buffer->add_vertex_data(std::move(data));
+}
+
+void vulkan_context::create_final_vertex_buffer(size_t size)
+{
+    _final_vertex_buffer = std::make_unique<buffer>(
+        *this, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+}
+
+void vulkan_context::destroy_staged_vertex_buffer()
+{
+    _staged_vertex_buffer = nullptr;
+}
+void vulkan_context::destroy_final_vertex_buffer()
+{
+    _final_vertex_buffer = nullptr;
+}
+
+void vulkan_context::create_index_buffer()
+{
+    _index_buffer = std::make_unique<buffer>(
+        *this, 6 * sizeof(uint16_t),
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    void *indeces_data;
+    vkMapMemory(get_logical_device().get_vk_handler(), _index_buffer->get_vk_device_memory_handle(), 0, _index_buffer->get_buffer_size(), 0, &indeces_data);
+    memcpy(indeces_data, _index_buffer->data(), _index_buffer->get_buffer_size());
 }

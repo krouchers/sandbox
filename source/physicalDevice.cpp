@@ -94,19 +94,19 @@ void physicalDevice::findQueueFamilies(VkPhysicalDevice dev) noexcept
     physicalDeviceFamilyqueueProperties = std::vector<VkQueueFamilyProperties>(count);
     vkGetPhysicalDeviceQueueFamilyProperties(dev, &count, physicalDeviceFamilyqueueProperties.data());
 
+    size_t i = 0;
     for (const auto &familyProperties : physicalDeviceFamilyqueueProperties)
     {
-        int i = 0;
         if (familyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
             queueFamilies.graphicFamily = i;
-            ++i;
             break;
         }
+        ++i;
     }
 
     VkBool32 present_support = false;
-    for (size_t i = 0; i < physicalDeviceFamilyqueueProperties.size(); ++i)
+    for (i = 0; i < physicalDeviceFamilyqueueProperties.size(); ++i)
     {
         vkGetPhysicalDeviceSurfaceSupportKHR(dev, static_cast<uint32_t>(i), _vk_context.get_swapchain().get_surface(), &present_support);
         if (present_support)
@@ -114,9 +114,20 @@ void physicalDevice::findQueueFamilies(VkPhysicalDevice dev) noexcept
             queueFamilies.presentFamily = i;
         }
     }
+    i = 0;
+    for (const auto &familyProperties : physicalDeviceFamilyqueueProperties)
+    {
+        if ((familyProperties.queueFlags & VK_QUEUE_TRANSFER_BIT) && !(familyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT))
+        {
+            queueFamilies.transferFamily = i;
+            break;
+        }
+        ++i;
+    }
 #ifdef DEBUG
     std::cout << "graphic family index: " << queueFamilies.graphicFamily.value() << std::endl;
     std::cout << "present family index: " << queueFamilies.presentFamily.value() << std::endl;
+    std::cout << "transfer family index: " << queueFamilies.transferFamily.value() << std::endl;
 #endif
 }
 
@@ -146,4 +157,3 @@ std::vector<const char *> &physicalDevice::get_required_extentions()
 {
     return requiredExtentionNames;
 }
-

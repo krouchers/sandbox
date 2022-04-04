@@ -8,6 +8,7 @@ vk_engine::vk_engine(Window &window) : wnd{window}
 vk_engine::~vk_engine()
 {
     context->device_idle();
+    context->destroy_final_vertex_buffer();
 }
 
 void vk_engine::init_engine()
@@ -17,7 +18,7 @@ void vk_engine::init_engine()
 #else
     context = std::make_unique<vulkan_context>(wnd);
 #endif
-    context->create_vertex_input_buffer(500);
+    context->create_final_vertex_buffer(500 * sizeof(Vertex));
 }
 
 void vk_engine::draw_frame(){
@@ -40,5 +41,5 @@ void vk_engine::normalize_coordinats(glm::vec2 &pos_to_normalize){
 
 
 void vk_engine::create_custom_size_buffer(size_t quanitiy_of_vertices){
-    context->create_vertex_input_buffer(quanitiy_of_vertices);
+    context->create_staged_vertex_buffer(quanitiy_of_vertices);
 }
