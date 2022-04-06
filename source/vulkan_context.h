@@ -4,8 +4,8 @@
 #include <physicalDevice.h>
 #include <logical_device.h>
 #include <renderpass.h>
-#include<glm/vec2.hpp>
-#include<glm/vec3.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 
 // std
 #include <vector>
@@ -16,7 +16,7 @@
 class swapchain;
 class graphic_pipeline;
 class application;
-template<typename T>
+template <typename T>
 class buffer;
 
 struct Vertex
@@ -47,8 +47,7 @@ private:
     std::unique_ptr<graphic_pipeline> _graphic_pipeline;
     std::unique_ptr<swapchain> _swapchain;
     std::unique_ptr<renderpass> _renderpass;
-    std::unique_ptr<buffer<Vertex>> _staged_vertex_buffer;
-    std::unique_ptr<buffer<Vertex>> _final_vertex_buffer;
+    std::unique_ptr<buffer<Vertex>> _vertex_buffer;
     std::unique_ptr<buffer<uint32_t>> _index_buffer;
     Window &window;
 
@@ -66,23 +65,25 @@ public:
 
     // geters
     VkInstance get_instance();
-    buffer<Vertex> &get_staged_vertex_buffer();
-    buffer<Vertex> &get_final_vertex_buffer();
+    buffer<Vertex> &get_vertex_buffer();
     Window &getWindow();
     physicalDevice &get_physical_device();
     swapchain &get_swapchain();
     logical_device &get_logical_device();
     renderpass &get_renderpass();
     graphic_pipeline &get_pipeline();
+    buffer<uint32_t> &get_index_buffer();
     //
     // seters
-    void add_vertex_data(std::vector<Vertex> &&data);
-    void set_vertex_data_to_buffer(buffer<Vertex> &buf, std::vector<Vertex> data);
+    template <typename T>
+    void set_buffer_data(buffer<T> &buf, std::vector<T> data);
     //
     void device_idle();
     void destroy_staged_vertex_buffer();
     void destroy_final_vertex_buffer();
-    void create_staged_vertex_buffer(size_t);
+    void create_vertex_buffer(std::vector<Vertex> &data);
+    buffer<Vertex> create_staged_vertex_buffer(std::vector<Vertex> &data);
+    buffer<uint32_t> create_staged_index_buffer(std::vector<uint32_t> &data);
     void create_final_vertex_buffer(size_t);
     void create_sync_objects();
     void create_command_buffers();
@@ -91,7 +92,7 @@ public:
     void create_renderpass();
     void create_swapchain();
     void destroy_device();
-    void create_index_buffer();
+    void create_index_buffer(std::vector<uint32_t> &data);
     extAndLayerInfo getExtAndLayersInfo() noexcept;
     void print_supported_extantions();
     void create_instance();
@@ -101,4 +102,6 @@ public:
     void destroy_instance();
     void createLogicalDevice();
     void destroy_surface();
+    void transfer_to_local_memory_vertex_data(std::vector<Vertex> &&data);
+    void transfer_to_local_memory_index_buffer(std::vector<uint32_t> &data);
 };

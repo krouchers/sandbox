@@ -21,10 +21,6 @@ void application::run()
     }
 }
 
-void application::load_object(std::vector<Vertex> &&obj)
-{
-    my_engine->load_obj(std::forward<decltype(obj)>(obj));
-}
 
 void application::draw_frame()
 {
@@ -48,7 +44,6 @@ void application::draw_triangle(glm::vec2 pos)
         {right_pos, {1.0, 0.0, 0.0}},
         {up_pos, {1.0, 0.0, 0.0}}};
 
-    my_engine->load_obj(std::move(triangle));
 }
 
 Window *application::get_window()

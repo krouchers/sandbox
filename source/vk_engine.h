@@ -18,6 +18,5 @@ public:
 
     void normalize_coordinats(glm::vec2 &);
     void create_custom_size_buffer(size_t size);
-    void load_obj(std::vector<Vertex> &&obj);
     void draw_frame();
 };

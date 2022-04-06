@@ -59,8 +59,8 @@ void graphic_pipeline::create_graphic_pipeline()
 
     VkPipelineVertexInputStateCreateInfo ver_input_info{};
 
-    auto vertex_binding_descriptions = _vk_context.get_staged_vertex_buffer().get_binding_description();
-    auto vertex_atribute_descriptions = _vk_context.get_staged_vertex_buffer().get_atribute_description();
+    auto vertex_binding_descriptions = _vk_context.get_vertex_buffer().get_binding_description();
+    auto vertex_atribute_descriptions = _vk_context.get_vertex_buffer().get_atribute_description();
     ver_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     ver_input_info.vertexBindingDescriptionCount = 1;
     ver_input_info.pVertexBindingDescriptions = &vertex_binding_descriptions;

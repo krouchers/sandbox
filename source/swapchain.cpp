@@ -1,7 +1,7 @@
 #include <swapchain.h>
 #include <vulkan/vulkan.h>
 #include <graphic_pipeline.h>
-#include<buffer.h>
+#include <buffer.h>
 
 // std
 #include <stdexcept>
@@ -286,12 +286,13 @@ void swapchain::record_buffer(VkCommandBuffer command_buffer, uint32_t image_ind
     vkCmdBeginRenderPass(command_buffer, &renderpass_befin_info, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _vk_context.get_pipeline().get_vk_handle());
 
-    VkBuffer *vertex_buffers = &_vk_context.get_final_vertex_buffer().get_vk_handler();
+    VkBuffer *vertex_buffers = &_vk_context.get_vertex_buffer().get_vk_handler();
     VkDeviceSize offsets[] = {0};
 
+    vkCmdBindIndexBuffer(command_buffer, _vk_context.get_index_buffer().get_vk_handler(), 0, VK_INDEX_TYPE_UINT32);
     vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
 
-    vkCmdDraw(command_buffer, _vk_context.get_final_vertex_buffer().get_quantity_loaded_vertices(), 1, 0, 0);
+    vkCmdDrawIndexed(command_buffer, _vk_context.get_index_buffer().get_buffer_size() / sizeof(uint32_t), 1, 0, 0, 0);
     vkCmdEndRenderPass(command_buffer);
     if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS)
         throw std::runtime_error("failed to end frame buffer");

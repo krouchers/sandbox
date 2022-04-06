@@ -18,28 +18,25 @@ void vk_engine::init_engine()
 #else
     context = std::make_unique<vulkan_context>(wnd);
 #endif
-    context->create_final_vertex_buffer(500 * sizeof(Vertex));
+    std::vector<Vertex> data = {
+        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+    context->create_vertex_buffer(data);
+
+    std::vector<uint32_t> indices = {
+        0, 1, 2, 2, 3, 0};
+    context->create_index_buffer(indices);
 }
 
-void vk_engine::draw_frame(){
+void vk_engine::draw_frame()
+{
     context->draw_frame();
 }
 
-
-void vk_engine::load_obj(std::vector<Vertex> &&obj){
-    for(auto &vertex : obj){
-        normalize_coordinats(vertex.position);
-    }
-
-    context->add_vertex_data(std::move(obj));
-}
-
-void vk_engine::normalize_coordinats(glm::vec2 &pos_to_normalize){
+void vk_engine::normalize_coordinats(glm::vec2 &pos_to_normalize)
+{
     pos_to_normalize.x = (pos_to_normalize.x / wnd.get_width() * 2) - 1;
     pos_to_normalize.y = (pos_to_normalize.y / wnd.get_height() * 2) - 1;
-}
-
-
-void vk_engine::create_custom_size_buffer(size_t quanitiy_of_vertices){
-    context->create_staged_vertex_buffer(quanitiy_of_vertices);
 }
