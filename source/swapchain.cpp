@@ -158,6 +158,8 @@ void swapchain::draw_frame()
                           _swapchain, UINT64_MAX, _is_image_available_semaphores[current_frame],
                           nullptr, &image_index);
 
+    _vk_context.update_ubo(image_index);
+    _vk_context.get_ubos()[image_index]->dispatch_vertex_data();
     vkResetCommandBuffer(_command_buffers[current_frame], 0);
     record_buffer(_command_buffers[current_frame], image_index);
 
@@ -291,6 +293,8 @@ void swapchain::record_buffer(VkCommandBuffer command_buffer, uint32_t image_ind
 
     vkCmdBindIndexBuffer(command_buffer, _vk_context.get_index_buffer().get_vk_handler(), 0, VK_INDEX_TYPE_UINT32);
     vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _vk_context.get_pipeline().get_pipeline_layout(),
+                            0, 1, &_vk_context.get_descriptor_sets()[image_index], 0, nullptr);
 
     vkCmdDrawIndexed(command_buffer, _vk_context.get_index_buffer().get_buffer_size() / sizeof(uint32_t), 1, 0, 0, 0);
     vkCmdEndRenderPass(command_buffer);
@@ -352,4 +356,9 @@ VkCommandPool &swapchain::get_command_pool(pool_type type)
     default:
         throw std::runtime_error("failed to get command pool");
     }
+}
+
+
+size_t swapchain::get_max_frames_in_flight(){
+    return _max_frames_in_flight;
 }

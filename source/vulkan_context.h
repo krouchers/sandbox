@@ -6,6 +6,7 @@
 #include <renderpass.h>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <glm/mat4x4.hpp>
 
 // std
 #include <vector>
@@ -18,6 +19,13 @@ class graphic_pipeline;
 class application;
 template <typename T>
 class buffer;
+
+struct uniform_buffer_object
+{
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
 
 struct Vertex
 {
@@ -49,6 +57,10 @@ private:
     std::unique_ptr<renderpass> _renderpass;
     std::unique_ptr<buffer<Vertex>> _vertex_buffer;
     std::unique_ptr<buffer<uint32_t>> _index_buffer;
+
+    std::vector<std::unique_ptr<buffer<uniform_buffer_object>>> _ubos;
+    std::vector<VkDescriptorSet> _descriptor_sets;
+    VkDescriptorPool _descriptor_pool;
     Window &window;
 
     void initPhysicalDevice() noexcept;
@@ -62,8 +74,10 @@ public:
     vulkan_context(const vulkan_context &) = delete;
     vulkan_context(const vulkan_context &&) = delete;
     vulkan_context &operator=(const vulkan_context &) = delete;
-
+    vulkan_context &operator=(vulkan_context &&);
+    std::vector<std::unique_ptr<buffer<uniform_buffer_object>>> &get_ubos();
     // geters
+    std::vector<VkDescriptorSet> &get_descriptor_sets();
     VkInstance get_instance();
     buffer<Vertex> &get_vertex_buffer();
     Window &getWindow();
@@ -73,12 +87,17 @@ public:
     renderpass &get_renderpass();
     graphic_pipeline &get_pipeline();
     buffer<uint32_t> &get_index_buffer();
+    void destroy_ubos();
+    void destroy_descriptor_sets();
     //
     // seters
     template <typename T>
     void set_buffer_data(buffer<T> &buf, std::vector<T> data);
     //
     void device_idle();
+
+    void ubos_init();
+    void update_ubo(uint32_t);
     void destroy_staged_vertex_buffer();
     void destroy_final_vertex_buffer();
     void create_vertex_buffer(std::vector<Vertex> &data);
@@ -86,11 +105,15 @@ public:
     buffer<uint32_t> create_staged_index_buffer(std::vector<uint32_t> &data);
     void create_final_vertex_buffer(size_t);
     void create_sync_objects();
+    void create_descriptor_pool();
+    void populate_descriptors();
+    void allocate_descriptor_sets();
     void create_command_buffers();
     void create_surface();
     void renderpass_init();
     void create_renderpass();
     void create_swapchain();
+    void write_descriptor_sets();
     void destroy_device();
     void create_index_buffer(std::vector<uint32_t> &data);
     extAndLayerInfo getExtAndLayersInfo() noexcept;

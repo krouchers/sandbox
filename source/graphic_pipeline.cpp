@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
-#include<buffer.h>
+#include <buffer.h>
 
 graphic_pipeline::graphic_pipeline(vulkan_context &vk_cont) : _vk_context{vk_cont}
 {
@@ -11,6 +11,7 @@ graphic_pipeline::graphic_pipeline(vulkan_context &vk_cont) : _vk_context{vk_con
 
 graphic_pipeline::~graphic_pipeline()
 {
+    vkDestroyDescriptorSetLayout(_vk_context.get_logical_device().get_vk_handler(), _descriptor_layout, nullptr);
     vkDestroyPipelineLayout(_vk_context.get_logical_device().get_vk_handler(), _pipeline_layout, nullptr);
     vkDestroyPipeline(_vk_context.get_logical_device().get_vk_handler(), _pipeline, nullptr);
 };
@@ -55,7 +56,6 @@ void graphic_pipeline::create_graphic_pipeline()
     frag_create_info.pName = "main";
 
     VkPipelineShaderStageCreateInfo shader_infos[] = {frag_create_info, vertex_create_info};
-
 
     VkPipelineVertexInputStateCreateInfo ver_input_info{};
 
@@ -116,8 +116,12 @@ void graphic_pipeline::create_graphic_pipeline()
     color_blending.attachmentCount = 1;
     color_blending.pAttachments = &color_blending_info_per_attachment;
 
+    create_descriptors();
+
     VkPipelineLayoutCreateInfo layout_info{};
     layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    layout_info.setLayoutCount = 1;
+    layout_info.pSetLayouts = &_descriptor_layout;
     if (vkCreatePipelineLayout(_vk_context.get_logical_device().get_vk_handler(), &layout_info, nullptr, &_pipeline_layout) != VK_SUCCESS)
         throw std::runtime_error("failed to create pipeline layout");
 
@@ -156,4 +160,32 @@ std::vector<char> graphic_pipeline::read_shader_file(const char *file_name)
 VkPipeline graphic_pipeline::get_vk_handle()
 {
     return _pipeline;
+}
+
+VkDescriptorSetLayout &graphic_pipeline::get_descriptor_set_layout()
+{
+    return _descriptor_layout;
+}
+
+void graphic_pipeline::create_descriptors()
+{
+    VkDescriptorSetLayoutBinding layout_binding{};
+    layout_binding.binding = 0;
+    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    layout_binding.descriptorCount = 1;
+    layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkDescriptorSetLayoutCreateInfo descriptor_set_layout_info{};
+    descriptor_set_layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    descriptor_set_layout_info.bindingCount = 1;
+    descriptor_set_layout_info.pBindings = &layout_binding;
+
+    if (vkCreateDescriptorSetLayout(_vk_context.get_logical_device().get_vk_handler(), &descriptor_set_layout_info, nullptr, &_descriptor_layout))
+    {
+        throw std::runtime_error("failed to create descriptor set layout");
+    }
+}
+
+VkPipelineLayout &graphic_pipeline::get_pipeline_layout(){
+    return _pipeline_layout;
 }

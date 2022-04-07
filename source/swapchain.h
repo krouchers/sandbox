@@ -2,6 +2,7 @@
 #include <window.h>
 #include <vulkan/vulkan_core.h>
 #include <vulkan_context.h>
+#include<swapchain.h>
 
 enum pool_type
 {
@@ -36,6 +37,8 @@ class swapchain
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapchainImageViews;
 
+    std::vector<buffer<uniform_buffer_object>> _uniform_buffers;
+
     VkCommandPool _graphic_command_pool;
     VkCommandPool _transfer_command_pool;
 
@@ -56,12 +59,14 @@ public:
     void create_sync_objects();
     void create_command_pools();
     void create_command_buffers();
+    void create_uniform_buffers();
     void create_swapchain();
     void create_surface();
     // geters
     VkQueue *get_grapchic_queue();
     VkQueue *get_present_queue();
     VkQueue *get_transfer_queue();
+    size_t get_max_frames_in_flight();
     VkCommandPool &get_command_pool(pool_type type);
     std::vector<VkImageView> get_swapchain_imageveiws();
     VkSurfaceKHR get_surface();

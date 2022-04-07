@@ -1,4 +1,5 @@
 #include <buffer.h>
+#include <swapchain.h>
 
 template <typename T>
 VkVertexInputBindingDescription buffer<T>::get_binding_description()
@@ -35,35 +36,35 @@ void buffer<T>::create_buffer()
     info.usage = _usage;
     info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(_vk_context.get_logical_device().get_vk_handler(), &info, nullptr, &_buffer) != VK_SUCCESS)
+    if (vkCreateBuffer(_vk_context->get_logical_device().get_vk_handler(), &info, nullptr, &_buffer) != VK_SUCCESS)
         throw std::runtime_error("failed to create vertex input buffer");
-    vkGetBufferMemoryRequirements(_vk_context.get_logical_device().get_vk_handler(), _buffer, &memory_requirements);
+    vkGetBufferMemoryRequirements(_vk_context->get_logical_device().get_vk_handler(), _buffer, &memory_requirements);
 
     VkMemoryAllocateInfo allocate_info{};
     allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocate_info.allocationSize = memory_requirements.size;
     allocate_info.memoryTypeIndex = find_memory_type(memory_requirements.memoryTypeBits, _memory_properties);
 
-    if (vkAllocateMemory(_vk_context.get_logical_device().get_vk_handler(), &allocate_info, nullptr, &_memory) != VK_SUCCESS)
+    if (vkAllocateMemory(_vk_context->get_logical_device().get_vk_handler(), &allocate_info, nullptr, &_memory) != VK_SUCCESS)
         throw std::runtime_error("failed to allocate vertex memory");
 
-    vkBindBufferMemory(_vk_context.get_logical_device().get_vk_handler(), _buffer, _memory, 0);
+    vkBindBufferMemory(_vk_context->get_logical_device().get_vk_handler(), _buffer, _memory, 0);
 }
 
 template <typename T>
 void buffer<T>::dispatch_vertex_data()
 {
     void *host_visible_memory{nullptr};
-    vkMapMemory(_vk_context.get_logical_device().get_vk_handler(), _memory, 0, VK_WHOLE_SIZE, 0, &host_visible_memory);
+    vkMapMemory(_vk_context->get_logical_device().get_vk_handler(), _memory, 0, VK_WHOLE_SIZE, 0, &host_visible_memory);
     memcpy(host_visible_memory, _vertices.data(), sizeof(T) * _vertices.size());
-    vkUnmapMemory(_vk_context.get_logical_device().get_vk_handler(), _memory);
+    vkUnmapMemory(_vk_context->get_logical_device().get_vk_handler(), _memory);
 }
 
 template <typename T>
 uint32_t buffer<T>::find_memory_type(uint32_t memory_type_filter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties physical_device_memory_properties;
-    vkGetPhysicalDeviceMemoryProperties(_vk_context.get_physical_device().getVkHandler(), &physical_device_memory_properties);
+    vkGetPhysicalDeviceMemoryProperties(_vk_context->get_physical_device().getVkHandler(), &physical_device_memory_properties);
 
     for (uint32_t i = 0; i < physical_device_memory_properties.memoryTypeCount; ++i)
     {
@@ -77,7 +78,7 @@ uint32_t buffer<T>::find_memory_type(uint32_t memory_type_filter, VkMemoryProper
 }
 
 template <typename T>
-buffer<T>::buffer(vulkan_context &vk_context, std::vector<T> &data, VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties)
+buffer<T>::buffer(vulkan_context *vk_context, std::vector<T> &data, VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties)
     : _vk_context{vk_context}, _size{data.size() * sizeof(T)}, _vertices(data),
       _usage{usage}, _memory_properties{memory_properties}
 {
@@ -87,8 +88,8 @@ buffer<T>::buffer(vulkan_context &vk_context, std::vector<T> &data, VkBufferUsag
 template <typename T>
 buffer<T>::~buffer()
 {
-    vkDestroyBuffer(_vk_context.get_logical_device().get_vk_handler(), _buffer, nullptr);
-    vkFreeMemory(_vk_context.get_logical_device().get_vk_handler(), _memory, nullptr);
+    vkDestroyBuffer(_vk_context->get_logical_device().get_vk_handler(), _buffer, nullptr);
+    vkFreeMemory(_vk_context->get_logical_device().get_vk_handler(), _memory, nullptr);
 }
 
 template <typename T>
@@ -108,13 +109,13 @@ void buffer<T>::copy_buffer(buffer &src)
 {
     VkCommandBufferAllocateInfo buf_aloc_info{};
     buf_aloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    buf_aloc_info.commandPool = _vk_context.get_swapchain().get_command_pool(TRANSFER);
+    buf_aloc_info.commandPool = _vk_context->get_swapchain().get_command_pool(TRANSFER);
     buf_aloc_info.commandBufferCount = 1;
     buf_aloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
     VkCommandBuffer transfer_coomand_buffer;
 
-    vkAllocateCommandBuffers(_vk_context.get_logical_device().get_vk_handler(), &buf_aloc_info, &transfer_coomand_buffer);
+    vkAllocateCommandBuffers(_vk_context->get_logical_device().get_vk_handler(), &buf_aloc_info, &transfer_coomand_buffer);
 
     VkCommandBufferBeginInfo begin_info{};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -136,9 +137,9 @@ void buffer<T>::copy_buffer(buffer &src)
     sub_info.commandBufferCount = 1;
     sub_info.pCommandBuffers = &transfer_coomand_buffer;
 
-    vkQueueSubmit(*_vk_context.get_swapchain().get_transfer_queue(), 1, &sub_info, VK_NULL_HANDLE);
-    vkQueueWaitIdle(*_vk_context.get_swapchain().get_transfer_queue());
-    vkFreeCommandBuffers(_vk_context.get_logical_device().get_vk_handler(), _vk_context.get_swapchain().get_command_pool(TRANSFER),
+    vkQueueSubmit(*_vk_context->get_swapchain().get_transfer_queue(), 1, &sub_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(*_vk_context->get_swapchain().get_transfer_queue());
+    vkFreeCommandBuffers(_vk_context->get_logical_device().get_vk_handler(), _vk_context->get_swapchain().get_command_pool(TRANSFER),
                          1, &transfer_coomand_buffer);
 }
 
@@ -149,8 +150,18 @@ VkDeviceMemory &buffer<T>::get_vk_device_memory_handle()
 }
 
 template <typename T>
-
 std::vector<T> &buffer<T>::data()
 {
     return _vertices;
+}
+
+template <typename T>
+void buffer<T>::set_data(std::vector<T> &data)
+{
+    _vertices = data;
+    _size = sizeof(T) * _vertices.size();
+}
+template <typename T>
+buffer<T>::buffer(){
+
 }

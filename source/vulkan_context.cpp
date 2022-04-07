@@ -3,10 +3,14 @@
 #include <graphic_pipeline.h>
 #include <application.h>
 #include <buffer.h>
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 // std
 #include <stdexcept>
 #include <iostream>
 #include <string.h>
+#include <chrono>
 
 extAndLayerInfo vulkan_context::getExtAndLayersInfo() noexcept
 {
@@ -21,8 +25,18 @@ void vulkan_context::destroy_device()
 {
     _p_logical_device->~logical_device();
 }
+
+void vulkan_context::destroy_ubos()
+{
+    for (auto &ubo : _ubos)
+    {
+        ubo = nullptr;
+    }
+}
 vulkan_context::~vulkan_context()
 {
+    destroy_descriptor_sets();
+    destroy_ubos();
     _index_buffer = nullptr;
     _vertex_buffer = nullptr;
     _graphic_pipeline = nullptr;
@@ -155,6 +169,9 @@ vulkan_context::vulkan_context(Window &wnd, bool is_debug_en) : is_debug_enabled
     renderpass_init();
     create_renderpass();
     create_graphic_pipeline();
+    create_descriptor_pool();
+    ubos_init();
+    allocate_descriptor_sets();
     create_command_buffers();
     create_sync_objects();
 }
@@ -180,7 +197,7 @@ void vulkan_context::draw_frame()
 buffer<uint32_t> vulkan_context::create_staged_index_buffer(std::vector<uint32_t> &data)
 {
     buffer<uint32_t> staged_vertex_buffer{
-        *this, data,
+        this, data,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
@@ -189,7 +206,7 @@ buffer<uint32_t> vulkan_context::create_staged_index_buffer(std::vector<uint32_t
 buffer<Vertex> vulkan_context::create_staged_vertex_buffer(std::vector<Vertex> &data)
 {
     buffer<Vertex> staged_vertex_buffer{
-        *this, data,
+        this, data,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
@@ -200,7 +217,7 @@ buffer<Vertex> vulkan_context::create_staged_vertex_buffer(std::vector<Vertex> &
 void vulkan_context::create_vertex_buffer(std::vector<Vertex> &data)
 {
     _vertex_buffer = std::make_unique<buffer<Vertex>>(
-        *this, data,
+        this, data,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
@@ -208,7 +225,7 @@ void vulkan_context::transfer_to_local_memory_vertex_data(std::vector<Vertex> &&
 {
 
     buffer<Vertex> staged_vertex_buffer{
-        *this, data, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        this, data, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
 
     staged_vertex_buffer.dispatch_vertex_data();
@@ -328,7 +345,7 @@ void vulkan_context::destroy_final_vertex_buffer()
 void vulkan_context::transfer_to_local_memory_index_buffer(std::vector<uint32_t> &data)
 {
     buffer<uint32_t> staged_index_buffer{
-        *this, data,
+        this, data,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
@@ -345,6 +362,93 @@ buffer<uint32_t> &vulkan_context::get_index_buffer()
 void vulkan_context::create_index_buffer(std::vector<uint32_t> &data)
 {
     _index_buffer = std::make_unique<buffer<uint32_t>>(
-        *this, data, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        this, data, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+}
+
+std::vector<std::unique_ptr<buffer<uniform_buffer_object>>> &vulkan_context::get_ubos()
+{
+    return _ubos;
+}
+
+void vulkan_context::ubos_init()
+{
+    std::vector<uniform_buffer_object> ubos{uniform_buffer_object()};
+    for (size_t i = 0; i < _swapchain->get_max_frames_in_flight(); ++i)
+    {
+        _ubos.push_back(std::make_unique<buffer<uniform_buffer_object>>(
+            this, ubos, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+    }
+}
+
+void vulkan_context::update_ubo(uint32_t current_frame)
+{
+    static auto start_time = std::chrono::high_resolution_clock::now();
+    uniform_buffer_object ubo{};
+    auto current_time = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0, 0, 1));
+    ubo.proj = glm::perspective(glm::radians(45.0f), _swapchain->get_extent().width / (float)_swapchain->get_extent().height, 0.1f, 10.0f);
+    ubo.proj[1][1] *= -1;
+    auto data = std::vector<uniform_buffer_object>{ubo};
+    _ubos[current_frame]->set_data(data);
+}
+
+void vulkan_context::create_descriptor_pool()
+{
+    VkDescriptorPoolSize pool_size{};
+    pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pool_size.descriptorCount = static_cast<uint32_t>(_swapchain->get_max_frames_in_flight());
+
+    VkDescriptorPoolCreateInfo pool_create_info{};
+    pool_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_create_info.maxSets = static_cast<uint32_t>(_swapchain->get_max_frames_in_flight());
+    pool_create_info.poolSizeCount = 1;
+    pool_create_info.pPoolSizes = &pool_size;
+
+    if (vkCreateDescriptorPool(_p_logical_device->get_vk_handler(), &pool_create_info, nullptr, &_descriptor_pool) != VK_SUCCESS)
+        throw std::runtime_error("failes to create descriptor pool");
+}
+
+void vulkan_context::allocate_descriptor_sets()
+{
+    std::vector<VkDescriptorSetLayout> layouts(_swapchain->get_max_frames_in_flight(), _graphic_pipeline->get_descriptor_set_layout());
+    VkDescriptorSetAllocateInfo alloc_info{};
+    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    alloc_info.descriptorPool = _descriptor_pool;
+    alloc_info.descriptorSetCount = static_cast<uint32_t>(_swapchain->get_max_frames_in_flight());
+    alloc_info.pSetLayouts = layouts.data();
+
+    _descriptor_sets.resize(_swapchain->get_max_frames_in_flight());
+    if (vkAllocateDescriptorSets(_p_logical_device->get_vk_handler(), &alloc_info, _descriptor_sets.data()) != VK_SUCCESS)
+        throw std::runtime_error("failed to allocate descriptor sets");
+
+    for (size_t i = 0; i < _swapchain->get_max_frames_in_flight(); ++i)
+    {
+        VkDescriptorBufferInfo buffer_info{};
+        buffer_info.buffer = _ubos[i]->get_vk_handler();
+        buffer_info.offset = 0;
+        buffer_info.range = sizeof(uniform_buffer_object);
+
+        VkWriteDescriptorSet write_info{};
+        write_info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write_info.dstSet = _descriptor_sets[i];
+        write_info.dstBinding = 0;
+        write_info.dstArrayElement = 0;
+        write_info.descriptorCount = 1;
+        write_info.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        write_info.pBufferInfo = &buffer_info;
+        vkUpdateDescriptorSets(_p_logical_device->get_vk_handler(), 1, &write_info, 0, nullptr);
+    }
+}
+
+std::vector<VkDescriptorSet> &vulkan_context::get_descriptor_sets()
+{
+    return _descriptor_sets;
+}
+
+void vulkan_context::destroy_descriptor_sets(){
+    vkDestroyDescriptorPool(_p_logical_device->get_vk_handler(), _descriptor_pool, nullptr);
 }

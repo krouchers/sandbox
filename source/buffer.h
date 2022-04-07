@@ -1,6 +1,5 @@
 #pragma once
 #include <vulkan_context.h>
-#include <swapchain.h>
 // 3dparty
 #include <vulkan/vulkan.h>
 #include <glm/vec2.hpp>
@@ -16,7 +15,7 @@
 template <typename T>
 class buffer
 {
-    vulkan_context &_vk_context;
+    vulkan_context *_vk_context;
     VkVertexInputBindingDescription _binding_description;
     size_t _size;
     std::vector<T> _vertices;
@@ -29,7 +28,8 @@ class buffer
     VkMemoryPropertyFlags _memory_properties;
 
 public:
-    buffer(vulkan_context &, std::vector<T> &data, VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties);
+    buffer(vulkan_context *, std::vector<T> &data, VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties);
+    buffer();
     ~buffer();
     // geters
     size_t get_buffer_size();
@@ -37,6 +37,7 @@ public:
     VkDeviceMemory &get_vk_device_memory_handle();
     //
     void copy_buffer(buffer &src);
+    void set_data(std::vector<T> &data);
     VkVertexInputBindingDescription get_binding_description();
     void dispatch_vertex_data();
     std::vector<T> &data();
