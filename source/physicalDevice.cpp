@@ -31,7 +31,7 @@ bool physicalDevice::isDeviceSuitable(VkPhysicalDevice dev) noexcept
     findQueueFamilies(dev);
     populate_swapchain_details(dev);
     bool isRequiredExtentionsSupported = isRequiredExtensionsSupported(dev);
-    return features.geometryShader && queueFamilies.isComplete() && _swapchainSupport.isComplete() && isRequiredExtentionsSupported;
+    return features.geometryShader && queueFamilies.isComplete() && _swapchainSupport.isComplete() && isRequiredExtentionsSupported && features.samplerAnisotropy;
 }
 
 void physicalDevice::populate_swapchain_details(VkPhysicalDevice dev)

@@ -13,14 +13,33 @@ if(USE_DEBUG)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g") 
 endif()
 project(window)
-file(GLOB 
-SOURCES
-${PROJECT_SOURCE_DIR}/source/*.cpp)
+
+file(GLOB_RECURSE SOURCES
+${PROJECT_SOURCE_DIR}/source/*.cpp
+${PROJECT_SOURCE_DIR}/source/*.h
+)
 add_subdirectory(${PROJECT_SOURCE_DIR}/3dparty/glfw ${GLFW_PATH}/libs)
 
+file(GLOB IMGUI_SOURCES 
+"${DIR_3DPARTY}/imgui/backends/imgui_impl_glfw.cpp"
+"${DIR_3DPARTY}/imgui/backends/imgui_impl_vulkan.cpp"
+"${DIR_3DPARTY}/imgui/imgui.cpp"
+"${DIR_3DPARTY}/imgui/imgui_draw.cpp"
+"${DIR_3DPARTY}/imgui/imgui_tables.cpp"
+"${DIR_3DPARTY}/imgui/imgui_widgets.cpp"
+)
+
+
+file(GLOB_RECURSE IMGUI_HEADERS
+"${PROJECT_SOURCE_DIR}/3dparty/imgui/imgui.h")
+
+set(SOURCES ${SOURCES} ${IMGUI_SOURCES} ${IMGUI_HEADERS})
+
+foreach(file ${SOURCES})
+    message(${file})
+endforeach(file)
+
 add_executable(window ${SOURCES})
-#add_compile_options("-Wall -Wextra -Werror -Wshadow")
-#add_compile_definitions(-Ddebug)
 
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -42,7 +61,13 @@ target_include_directories(window PRIVATE
     ${GLFW_PATH}/include 
     ${VULKAN_PATH}/Include
     ${CMAKE_CURRENT_SOURCE_DIR}/source
+    ${CMAKE_CURRENT_SOURCE_DIR}/source/imgui
     ${GLM_PATH}
+    ${DIR_3DPARTY}/imgui
+    ${DIR_3DPARTY}/imgui/backends
+    ${STB_PATH}
+    ${IMGUI_PATH}/backends
+    ${IMGUI_PATH}
     )
 
 find_program(
@@ -52,7 +77,6 @@ find_program(
     REQUIRED
 )
 
-message(${GLSL_VALIDATOR})
 
 file(GLOB_RECURSE SHADER_FILES
 "${PROJECT_SOURCE_DIR}/*/shaders/*.vert"
@@ -69,7 +93,6 @@ foreach(GLSL ${SHADER_FILES})
         DEPENDS ${GLSL}
         )
         list(APPEND SPIRV_BINARY_FILES ${SPIRV})
-        message(${SPIRV})
 endforeach(GLSL)
 
 
@@ -79,3 +102,6 @@ add_custom_target(
 )
 
 add_dependencies(window Shaders)
+
+
+

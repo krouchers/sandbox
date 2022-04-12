@@ -64,7 +64,7 @@ void graphic_pipeline::create_graphic_pipeline()
     ver_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     ver_input_info.vertexBindingDescriptionCount = 1;
     ver_input_info.pVertexBindingDescriptions = &vertex_binding_descriptions;
-    ver_input_info.vertexAttributeDescriptionCount = 2;
+    ver_input_info.vertexAttributeDescriptionCount = _vk_context.get_vertex_buffer().get_atribute_description().size();
     ver_input_info.pVertexAttributeDescriptions = vertex_atribute_descriptions.data();
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly_info{};
@@ -175,17 +175,26 @@ void graphic_pipeline::create_descriptors()
     layout_binding.descriptorCount = 1;
     layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
+    VkDescriptorSetLayoutBinding sampler_layout_binding{};
+    sampler_layout_binding.binding = 1;
+    sampler_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    sampler_layout_binding.descriptorCount = 1;
+    sampler_layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {layout_binding, sampler_layout_binding};
     VkDescriptorSetLayoutCreateInfo descriptor_set_layout_info{};
     descriptor_set_layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptor_set_layout_info.bindingCount = 1;
-    descriptor_set_layout_info.pBindings = &layout_binding;
+    descriptor_set_layout_info.bindingCount = bindings.size();
+    descriptor_set_layout_info.pBindings = bindings.data();
 
-    if (vkCreateDescriptorSetLayout(_vk_context.get_logical_device().get_vk_handler(), &descriptor_set_layout_info, nullptr, &_descriptor_layout))
+    if (vkCreateDescriptorSetLayout(_vk_context.get_logical_device().get_vk_handler(), &descriptor_set_layout_info,
+                                    nullptr, &_descriptor_layout))
     {
         throw std::runtime_error("failed to create descriptor set layout");
     }
 }
 
-VkPipelineLayout &graphic_pipeline::get_pipeline_layout(){
+VkPipelineLayout &graphic_pipeline::get_pipeline_layout()
+{
     return _pipeline_layout;
 }

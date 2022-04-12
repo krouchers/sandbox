@@ -29,6 +29,7 @@ class buffer
 
 public:
     buffer(vulkan_context *, std::vector<T> &data, VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties);
+    buffer(vulkan_context *, size_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties);
     buffer();
     ~buffer();
     // geters
@@ -41,7 +42,7 @@ public:
     VkVertexInputBindingDescription get_binding_description();
     void dispatch_vertex_data();
     std::vector<T> &data();
-    std::array<VkVertexInputAttributeDescription, 2> get_atribute_description();
+    std::array<VkVertexInputAttributeDescription, 3> get_atribute_description();
     uint32_t find_memory_type(uint32_t memory_type_filter, VkMemoryPropertyFlags properties);
     void create_buffer();
 };

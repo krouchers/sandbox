@@ -1,9 +1,10 @@
 #pragma once
 #include <vulkan_context.h>
-#include<window.h>
+#include <window.h>
+#include <interface.h>
 
-//std
-#include<memory>
+// std
+#include <memory>
 
 class vk_engine
 {
@@ -16,6 +17,8 @@ public:
     vk_engine(Window &wnd);
     ~vk_engine();
 
+    vulkan_context *get_vk_context();
+    void load_texture(const std::string texture_path);
     void normalize_coordinats(glm::vec2 &);
     void create_custom_size_buffer(size_t size);
     void draw_frame();

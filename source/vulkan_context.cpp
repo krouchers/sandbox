@@ -3,6 +3,7 @@
 #include <graphic_pipeline.h>
 #include <application.h>
 #include <buffer.h>
+#include <texture.h>
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -35,6 +36,8 @@ void vulkan_context::destroy_ubos()
 }
 vulkan_context::~vulkan_context()
 {
+    _sampler = nullptr;
+    _texture = nullptr;
     destroy_descriptor_sets();
     destroy_ubos();
     _index_buffer = nullptr;
@@ -155,7 +158,8 @@ void vulkan_context::print_required_extantions()
     std::cout << std::endl;
 }
 
-vulkan_context::vulkan_context(Window &wnd, bool is_debug_en) : is_debug_enabled{is_debug_en}, window{wnd}
+vulkan_context::vulkan_context(Window &wnd, bool is_debug_en)
+    : window{wnd}, is_debug_enabled{is_debug_en}
 {
     create_instance();
 #ifdef DEBUG
@@ -171,6 +175,8 @@ vulkan_context::vulkan_context(Window &wnd, bool is_debug_en) : is_debug_enabled
     create_graphic_pipeline();
     create_descriptor_pool();
     ubos_init();
+    sampler_init();
+    texture_init("../textures/texture.jpg");
     allocate_descriptor_sets();
     create_command_buffers();
     create_sync_objects();
@@ -214,10 +220,10 @@ buffer<Vertex> vulkan_context::create_staged_vertex_buffer(std::vector<Vertex> &
     return staged_vertex_buffer;
 }
 
-void vulkan_context::create_vertex_buffer(std::vector<Vertex> &data)
+void vulkan_context::create_vertex_buffer(size_t size)
 {
     _vertex_buffer = std::make_unique<buffer<Vertex>>(
-        this, data,
+        this, size,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
@@ -359,10 +365,10 @@ buffer<uint32_t> &vulkan_context::get_index_buffer()
     return *_index_buffer.get();
 }
 
-void vulkan_context::create_index_buffer(std::vector<uint32_t> &data)
+void vulkan_context::create_index_buffer(size_t size)
 {
     _index_buffer = std::make_unique<buffer<uint32_t>>(
-        this, data, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        this, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
@@ -398,15 +404,20 @@ void vulkan_context::update_ubo(uint32_t current_frame)
 
 void vulkan_context::create_descriptor_pool()
 {
-    VkDescriptorPoolSize pool_size{};
-    pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    pool_size.descriptorCount = static_cast<uint32_t>(_swapchain->get_max_frames_in_flight());
+    VkDescriptorPoolSize ubo_size{};
+    ubo_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    ubo_size.descriptorCount = static_cast<uint32_t>(_swapchain->get_max_frames_in_flight());
 
+    VkDescriptorPoolSize combined_image_sampler_size{};
+    combined_image_sampler_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    combined_image_sampler_size.descriptorCount = static_cast<uint32_t>(_swapchain->get_max_frames_in_flight());
+
+    std::array<VkDescriptorPoolSize, 2> desciptor_pool_sizes = {ubo_size, combined_image_sampler_size};
     VkDescriptorPoolCreateInfo pool_create_info{};
     pool_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     pool_create_info.maxSets = static_cast<uint32_t>(_swapchain->get_max_frames_in_flight());
-    pool_create_info.poolSizeCount = 1;
-    pool_create_info.pPoolSizes = &pool_size;
+    pool_create_info.poolSizeCount = desciptor_pool_sizes.size();
+    pool_create_info.pPoolSizes = desciptor_pool_sizes.data();
 
     if (vkCreateDescriptorPool(_p_logical_device->get_vk_handler(), &pool_create_info, nullptr, &_descriptor_pool) != VK_SUCCESS)
         throw std::runtime_error("failes to create descriptor pool");
@@ -432,15 +443,28 @@ void vulkan_context::allocate_descriptor_sets()
         buffer_info.offset = 0;
         buffer_info.range = sizeof(uniform_buffer_object);
 
-        VkWriteDescriptorSet write_info{};
-        write_info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write_info.dstSet = _descriptor_sets[i];
-        write_info.dstBinding = 0;
-        write_info.dstArrayElement = 0;
-        write_info.descriptorCount = 1;
-        write_info.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        write_info.pBufferInfo = &buffer_info;
-        vkUpdateDescriptorSets(_p_logical_device->get_vk_handler(), 1, &write_info, 0, nullptr);
+        VkDescriptorImageInfo image_info{};
+        image_info.sampler = _sampler->get_vk_handle();
+        image_info.imageView = _texture->get_image_view();
+        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        std::array<VkWriteDescriptorSet, 2> write_infos{};
+        write_infos[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write_infos[0].dstSet = _descriptor_sets[i];
+        write_infos[0].dstBinding = 0;
+        write_infos[0].dstArrayElement = 0;
+        write_infos[0].descriptorCount = 1;
+        write_infos[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        write_infos[0].pBufferInfo = &buffer_info;
+
+        write_infos[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write_infos[1].dstSet = _descriptor_sets[i];
+        write_infos[1].dstBinding = 1;
+        write_infos[1].dstArrayElement = 0;
+        write_infos[1].descriptorCount = 1;
+        write_infos[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        write_infos[1].pImageInfo = &image_info;
+        vkUpdateDescriptorSets(_p_logical_device->get_vk_handler(), write_infos.size(), write_infos.data(), 0, nullptr);
     }
 }
 
@@ -449,6 +473,27 @@ std::vector<VkDescriptorSet> &vulkan_context::get_descriptor_sets()
     return _descriptor_sets;
 }
 
-void vulkan_context::destroy_descriptor_sets(){
+void vulkan_context::destroy_descriptor_sets()
+{
     vkDestroyDescriptorPool(_p_logical_device->get_vk_handler(), _descriptor_pool, nullptr);
+}
+
+void vulkan_context::sampler_init()
+{
+    _sampler = std::make_unique<sampler>(this);
+}
+
+sampler &vulkan_context::get_sampler()
+{
+    return *_sampler.get();
+}
+
+void vulkan_context::texture_init(const std::string tex_path)
+{
+    _texture = std::make_unique<texture>(this, _sampler.get(), tex_path);
+}
+
+texture &vulkan_context::get_texture()
+{
+    return *_texture.get();
 }

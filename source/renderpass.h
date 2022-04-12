@@ -16,7 +16,7 @@ class renderpass
 public:
     void create_framebuffers();
     void create_renderpass();
-    VkRenderPass get_vk_handle();
+    VkRenderPass &get_vk_handle();
     std::vector<VkFramebuffer> get_framebuffers();
     renderpass(vulkan_context &);
     ~renderpass();

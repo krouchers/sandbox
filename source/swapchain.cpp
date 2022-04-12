@@ -1,7 +1,7 @@
 #include <swapchain.h>
-#include <vulkan/vulkan.h>
 #include <graphic_pipeline.h>
 #include <buffer.h>
+#include<interface.h>
 
 // std
 #include <stdexcept>
@@ -148,7 +148,7 @@ swapchain::~swapchain()
 
 void swapchain::draw_frame()
 {
-    uint32_t current_frame = 0;
+    static uint32_t current_frame = 0;
     vkWaitForFences(_vk_context.get_logical_device().get_vk_handler(), 1, &is_can_submit_work_to_GPU[current_frame], VK_TRUE, UINT64_MAX);
 
     vkResetFences(_vk_context.get_logical_device().get_vk_handler(), 1, &is_can_submit_work_to_GPU[current_frame]);
@@ -158,8 +158,8 @@ void swapchain::draw_frame()
                           _swapchain, UINT64_MAX, _is_image_available_semaphores[current_frame],
                           nullptr, &image_index);
 
-    _vk_context.update_ubo(image_index);
-    _vk_context.get_ubos()[image_index]->dispatch_vertex_data();
+    _vk_context.update_ubo(current_frame);
+    _vk_context.get_ubos()[current_frame]->dispatch_vertex_data();
     vkResetCommandBuffer(_command_buffers[current_frame], 0);
     record_buffer(_command_buffers[current_frame], image_index);
 
@@ -194,7 +194,7 @@ void swapchain::draw_frame()
 
     vkQueuePresentKHR(present_queue, &present_info);
 
-    current_frame = (current_frame + 1) & _max_frames_in_flight;
+    current_frame = (current_frame + 1) % _max_frames_in_flight;
 }
 
 void swapchain::create_command_pools()
@@ -282,9 +282,8 @@ void swapchain::record_buffer(VkCommandBuffer command_buffer, uint32_t image_ind
     renderpass_befin_info.renderArea.offset = {0, 0};
     renderpass_befin_info.renderArea.extent = _extent;
     renderpass_befin_info.clearValueCount = 1;
-    VkClearValue clear_value = {0.0, 0.0, 0.0, 1.0};
+    VkClearValue clear_value = {0.8, 0.8, 0.8, 1.0};
     renderpass_befin_info.pClearValues = &clear_value;
-
     vkCmdBeginRenderPass(command_buffer, &renderpass_befin_info, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _vk_context.get_pipeline().get_vk_handle());
 

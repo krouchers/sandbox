@@ -5,7 +5,7 @@ template <typename T>
 VkVertexInputBindingDescription buffer<T>::get_binding_description()
 {
     VkVertexInputBindingDescription description{};
-    description.stride = sizeof(Vertex);
+    description.stride = sizeof(T);
     description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     description.binding = 0;
 
@@ -13,17 +13,23 @@ VkVertexInputBindingDescription buffer<T>::get_binding_description()
 }
 
 template <typename T>
-std::array<VkVertexInputAttributeDescription, 2> buffer<T>::get_atribute_description()
+std::array<VkVertexInputAttributeDescription, 3> buffer<T>::get_atribute_description()
 {
-    std::array<VkVertexInputAttributeDescription, 2> attribute_descriptions{};
+    std::array<VkVertexInputAttributeDescription, 3> attribute_descriptions{};
     attribute_descriptions[0].binding = 0;
     attribute_descriptions[0].location = 0;
     attribute_descriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
     attribute_descriptions[0].offset = offsetof(T, position);
+
     attribute_descriptions[1].binding = 0;
     attribute_descriptions[1].location = 1;
     attribute_descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
     attribute_descriptions[1].offset = offsetof(T, color);
+
+    attribute_descriptions[2].binding = 0;
+    attribute_descriptions[2].location = 2;
+    attribute_descriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+    attribute_descriptions[2].offset = offsetof(T, texture_coord);
     return attribute_descriptions;
 }
 
@@ -162,6 +168,13 @@ void buffer<T>::set_data(std::vector<T> &data)
     _size = sizeof(T) * _vertices.size();
 }
 template <typename T>
-buffer<T>::buffer(){
-
+buffer<T>::buffer()
+{
+}
+template <typename T>
+buffer<T>::buffer(vulkan_context *vk_context, size_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties)
+    : _vk_context{vk_context}, _size{size * sizeof(T)},
+      _usage{usage}, _memory_properties{memory_properties}
+{
+    create_buffer();
 }

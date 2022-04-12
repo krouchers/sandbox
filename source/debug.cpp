@@ -13,7 +13,7 @@ VkBool32 debug_messenger::debugCallback(
     (void)messageType;
     (void)pCallbackData;
     (void)pUserData;
-    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+    std::cerr << "[Validation layer]: " << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;
 }

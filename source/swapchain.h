@@ -7,7 +7,8 @@
 enum pool_type
 {
     GRAPHIC,
-    TRANSFER
+    TRANSFER,
+
 };
 
 class swapchain

@@ -14,7 +14,10 @@
 #include <memory>
 //
 
+class sampler;
+class texture;
 class swapchain;
+class interface;
 class graphic_pipeline;
 class application;
 template <typename T>
@@ -31,6 +34,7 @@ struct Vertex
 {
     glm::vec2 position;
     glm::vec3 color;
+    glm::vec2 texture_coord;
 };
 
 struct extAndLayerInfo
@@ -44,10 +48,10 @@ struct extAndLayerInfo
 class vulkan_context
 {
 private:
+    Window &window;
     VkInstance instance;
     std::vector<const char *> required_extantions;
     std::vector<const char *> required_layers{"VK_LAYER_KHRONOS_validation"};
-    const bool is_debug_enabled;
     bool checkRequestedLayersSupport();
     std::unique_ptr<debug_messenger> debugMessenger;
     std::unique_ptr<physicalDevice> _physical_device;
@@ -57,11 +61,13 @@ private:
     std::unique_ptr<renderpass> _renderpass;
     std::unique_ptr<buffer<Vertex>> _vertex_buffer;
     std::unique_ptr<buffer<uint32_t>> _index_buffer;
+    std::unique_ptr<texture> _texture;
+    std::unique_ptr<sampler> _sampler;
 
+    const bool is_debug_enabled;
     std::vector<std::unique_ptr<buffer<uniform_buffer_object>>> _ubos;
     std::vector<VkDescriptorSet> _descriptor_sets;
     VkDescriptorPool _descriptor_pool;
-    Window &window;
 
     void initPhysicalDevice() noexcept;
     void graphic_pipeline_init();
@@ -77,6 +83,8 @@ public:
     vulkan_context &operator=(vulkan_context &&);
     std::vector<std::unique_ptr<buffer<uniform_buffer_object>>> &get_ubos();
     // geters
+    sampler &get_sampler();
+    texture &get_texture();
     std::vector<VkDescriptorSet> &get_descriptor_sets();
     VkInstance get_instance();
     buffer<Vertex> &get_vertex_buffer();
@@ -95,12 +103,14 @@ public:
     void set_buffer_data(buffer<T> &buf, std::vector<T> data);
     //
     void device_idle();
-
+    void create_texture(const std::string path);
     void ubos_init();
+    void interface_init();
     void update_ubo(uint32_t);
     void destroy_staged_vertex_buffer();
     void destroy_final_vertex_buffer();
-    void create_vertex_buffer(std::vector<Vertex> &data);
+    void sampler_init();
+    void create_vertex_buffer(size_t size);
     buffer<Vertex> create_staged_vertex_buffer(std::vector<Vertex> &data);
     buffer<uint32_t> create_staged_index_buffer(std::vector<uint32_t> &data);
     void create_final_vertex_buffer(size_t);
@@ -115,7 +125,7 @@ public:
     void create_swapchain();
     void write_descriptor_sets();
     void destroy_device();
-    void create_index_buffer(std::vector<uint32_t> &data);
+    void create_index_buffer(size_t size);
     extAndLayerInfo getExtAndLayersInfo() noexcept;
     void print_supported_extantions();
     void create_instance();
@@ -127,4 +137,6 @@ public:
     void destroy_surface();
     void transfer_to_local_memory_vertex_data(std::vector<Vertex> &&data);
     void transfer_to_local_memory_index_buffer(std::vector<uint32_t> &data);
+    void create_texture_image_view();
+    void texture_init(const std::string tex_path);
 };

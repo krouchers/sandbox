@@ -6,7 +6,7 @@
 // std
 #include <stdexcept>
 
-VkRenderPass renderpass::get_vk_handle()
+VkRenderPass &renderpass::get_vk_handle()
 {
     return _renderpass;
 }

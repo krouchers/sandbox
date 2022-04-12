@@ -1,4 +1,5 @@
 #include <vk_engine.h>
+#include <texture.h>
 
 vk_engine::vk_engine(Window &window) : wnd{window}
 {
@@ -19,20 +20,29 @@ void vk_engine::init_engine()
     context = std::make_unique<vulkan_context>(wnd);
 #endif
     std::vector<Vertex> data = {
-        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
-    context->create_vertex_buffer(data);
+        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}}};
+    context->create_vertex_buffer(data.size());
+    context->get_vertex_buffer().set_data(data);
 
-    std::vector<uint32_t> indices = {
-        0, 1, 2, 2, 3, 0};
-    context->create_index_buffer(indices);
+    std::vector<uint32_t>
+        indices = {
+            0, 1, 2, 2, 3, 0};
+    context->create_index_buffer(indices.size());
+    context->get_index_buffer().set_data(indices);
+    context->get_texture().set_data();
 }
 
 void vk_engine::draw_frame()
 {
     context->draw_frame();
+}
+
+vulkan_context *vk_engine::get_vk_context()
+{
+    return context.get();
 }
 
 void vk_engine::normalize_coordinats(glm::vec2 &pos_to_normalize)

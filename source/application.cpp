@@ -39,10 +39,6 @@ void application::draw_triangle(glm::vec2 pos)
     glm::vec2 right_pos{(pos.x - left_pos.x) * size_factor + left_pos.x, pos.y + size_factor};
     glm::vec2 up_pos{pos.x, pos.y - size_factor};
 
-    std::vector<Vertex> triangle = {
-        {left_pos, {1.0, 0.0, 0.0}},
-        {right_pos, {1.0, 0.0, 0.0}},
-        {up_pos, {1.0, 0.0, 0.0}}};
 
 }
 

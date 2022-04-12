@@ -30,6 +30,9 @@ logical_device::logical_device(vulkan_context &vk_context) : _vk_context{vk_cont
         queueCreateInfos.push_back(queueCreateInfo);
     }
     VkDeviceCreateInfo createInfo{};
+    VkPhysicalDeviceFeatures enabled_features{};
+    enabled_features.samplerAnisotropy = VK_TRUE;
+    createInfo.pEnabledFeatures = &enabled_features;
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
