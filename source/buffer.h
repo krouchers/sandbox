@@ -43,7 +43,6 @@ public:
     void dispatch_vertex_data();
     std::vector<T> &data();
     std::array<VkVertexInputAttributeDescription, 3> get_atribute_description();
-    uint32_t find_memory_type(uint32_t memory_type_filter, VkMemoryPropertyFlags properties);
     void create_buffer();
 };
 

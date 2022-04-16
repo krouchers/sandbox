@@ -21,23 +21,19 @@ ${PROJECT_SOURCE_DIR}/source/*.h
 add_subdirectory(${PROJECT_SOURCE_DIR}/3dparty/glfw ${GLFW_PATH}/libs)
 
 file(GLOB IMGUI_SOURCES 
-"${DIR_3DPARTY}/imgui/backends/imgui_impl_glfw.cpp"
-"${DIR_3DPARTY}/imgui/backends/imgui_impl_vulkan.cpp"
-"${DIR_3DPARTY}/imgui/imgui.cpp"
-"${DIR_3DPARTY}/imgui/imgui_draw.cpp"
-"${DIR_3DPARTY}/imgui/imgui_tables.cpp"
-"${DIR_3DPARTY}/imgui/imgui_widgets.cpp"
+"${IMGUI_DIR}/backends/imgui_impl_glfw.cpp"
+"${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp"
+"${IMGUI_DIR}/imgui.cpp"
+"${IMGUI_DIR}/imgui_draw.cpp"
+"${IMGUI_DIR}/imgui_tables.cpp"
+"${IMGUI_DIR}/imgui_widgets.cpp"
 )
 
 
 file(GLOB_RECURSE IMGUI_HEADERS
-"${PROJECT_SOURCE_DIR}/3dparty/imgui/imgui.h")
+"${IMGUI_DIR}/*.h")
 
 set(SOURCES ${SOURCES} ${IMGUI_SOURCES} ${IMGUI_HEADERS})
-
-foreach(file ${SOURCES})
-    message(${file})
-endforeach(file)
 
 add_executable(window ${SOURCES})
 
@@ -66,8 +62,9 @@ target_include_directories(window PRIVATE
     ${DIR_3DPARTY}/imgui
     ${DIR_3DPARTY}/imgui/backends
     ${STB_PATH}
-    ${IMGUI_PATH}/backends
-    ${IMGUI_PATH}
+    ${IMGUI_DIR}/backends
+    ${IMGUI_DIR}
+    ${TINY_OJB_LOADER_DIR}
     )
 
 find_program(

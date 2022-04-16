@@ -18,7 +18,7 @@ std::array<VkVertexInputAttributeDescription, 3> buffer<T>::get_atribute_descrip
     std::array<VkVertexInputAttributeDescription, 3> attribute_descriptions{};
     attribute_descriptions[0].binding = 0;
     attribute_descriptions[0].location = 0;
-    attribute_descriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+    attribute_descriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
     attribute_descriptions[0].offset = offsetof(T, position);
 
     attribute_descriptions[1].binding = 0;
@@ -49,7 +49,7 @@ void buffer<T>::create_buffer()
     VkMemoryAllocateInfo allocate_info{};
     allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocate_info.allocationSize = memory_requirements.size;
-    allocate_info.memoryTypeIndex = find_memory_type(memory_requirements.memoryTypeBits, _memory_properties);
+    allocate_info.memoryTypeIndex = _vk_context->find_memory_type(memory_requirements.memoryTypeBits, _memory_properties);
 
     if (vkAllocateMemory(_vk_context->get_logical_device().get_vk_handler(), &allocate_info, nullptr, &_memory) != VK_SUCCESS)
         throw std::runtime_error("failed to allocate vertex memory");
@@ -64,23 +64,6 @@ void buffer<T>::dispatch_vertex_data()
     vkMapMemory(_vk_context->get_logical_device().get_vk_handler(), _memory, 0, VK_WHOLE_SIZE, 0, &host_visible_memory);
     memcpy(host_visible_memory, _vertices.data(), sizeof(T) * _vertices.size());
     vkUnmapMemory(_vk_context->get_logical_device().get_vk_handler(), _memory);
-}
-
-template <typename T>
-uint32_t buffer<T>::find_memory_type(uint32_t memory_type_filter, VkMemoryPropertyFlags properties)
-{
-    VkPhysicalDeviceMemoryProperties physical_device_memory_properties;
-    vkGetPhysicalDeviceMemoryProperties(_vk_context->get_physical_device().getVkHandler(), &physical_device_memory_properties);
-
-    for (uint32_t i = 0; i < physical_device_memory_properties.memoryTypeCount; ++i)
-    {
-        if (memory_type_filter & (1 << i) && (physical_device_memory_properties.memoryTypes[i].propertyFlags & properties) == properties)
-        {
-            return i;
-        }
-    }
-
-    throw std::runtime_error("failed to find suitable memory type");
 }
 
 template <typename T>

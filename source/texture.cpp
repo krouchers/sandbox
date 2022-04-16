@@ -42,7 +42,7 @@ void texture::allocate_image_memory()
     VkMemoryAllocateInfo alloc_info{};
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     alloc_info.allocationSize = requirements.size;
-    alloc_info.memoryTypeIndex = _staging_buffer->find_memory_type(requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    alloc_info.memoryTypeIndex = _vk_context->find_memory_type(requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     if (vkAllocateMemory(_vk_context->get_logical_device().get_vk_handler(), &alloc_info, nullptr, &_texture_image_memory) != VK_SUCCESS)
         throw std::runtime_error("failed to allocate texture memory");
@@ -67,87 +67,9 @@ texture::~texture()
     vkFreeMemory(_vk_context->get_logical_device().get_vk_handler(), _texture_image_memory, nullptr);
 }
 
-VkCommandBuffer texture::begin_single_time_commands()
-{
-    VkCommandBufferAllocateInfo alloc_info{};
-    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    alloc_info.commandPool = _vk_context->get_swapchain().get_command_pool(GRAPHIC);
-    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    alloc_info.commandBufferCount = 1;
-
-    VkCommandBuffer command_buffer;
-
-    vkAllocateCommandBuffers(_vk_context->get_logical_device().get_vk_handler(), &alloc_info, &command_buffer);
-
-    VkCommandBufferBeginInfo begin_info{};
-
-    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vkBeginCommandBuffer(command_buffer, &begin_info);
-    return command_buffer;
-}
-
-void texture::end_single_time_commands(VkCommandBuffer command_buffer)
-{
-    vkEndCommandBuffer(command_buffer);
-
-    VkSubmitInfo sub_info{};
-    sub_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    sub_info.commandBufferCount = 1;
-    sub_info.pCommandBuffers = &command_buffer;
-
-    vkQueueSubmit(
-        *_vk_context->get_swapchain().get_grapchic_queue(),
-        1, &sub_info, VK_NULL_HANDLE);
-    vkQueueWaitIdle(*_vk_context->get_swapchain().get_grapchic_queue());
-    vkFreeCommandBuffers(_vk_context->get_logical_device().get_vk_handler(),
-                         _vk_context->get_swapchain().get_command_pool(GRAPHIC), 1, &command_buffer);
-}
-
-void texture::set_image_layout(VkImageLayout old_layout, VkImageLayout new_layout)
-{
-    VkCommandBuffer command_buffer = begin_single_time_commands();
-    VkImageMemoryBarrier barier{};
-    VkPipelineStageFlags src_stage{};
-    VkPipelineStageFlags dst_stage{};
-    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-    {
-        barier.srcAccessMask = 0;
-        barier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    }
-    else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL and new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-    {
-        barier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    }
-    barier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barier.oldLayout = old_layout;
-    barier.newLayout = new_layout;
-    barier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barier.image = _texture_image;
-    barier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    barier.subresourceRange.baseMipLevel = 0;
-    barier.subresourceRange.levelCount = 1;
-    barier.subresourceRange.baseArrayLayer = 0;
-    barier.subresourceRange.layerCount = 1;
-
-    vkCmdPipelineBarrier(command_buffer,
-                         src_stage, dst_stage,
-                         0,
-                         0, nullptr,
-                         0, nullptr,
-                         1, &barier);
-    end_single_time_commands(command_buffer);
-}
 void texture::copy_buffer_to_image()
 {
-    VkCommandBuffer command_buffer = begin_single_time_commands();
+    VkCommandBuffer command_buffer = _vk_context->begin_single_time_commands();
 
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
@@ -162,7 +84,7 @@ void texture::copy_buffer_to_image()
 
     vkCmdCopyBufferToImage(command_buffer, _staging_buffer->get_vk_handler(), _texture_image,
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-    end_single_time_commands(command_buffer);
+    _vk_context->end_single_time_commands(command_buffer);
 }
 
 void texture::create_image_view()
@@ -190,8 +112,14 @@ VkImageView &texture::get_image_view()
 
 void texture::set_data()
 {
-    set_image_layout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    _vk_context->transition_image_layout(
+        _texture_image, VK_FORMAT_R8G8B8A8_SRGB,
+        VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     copy_buffer_to_image();
-    set_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    _vk_context->transition_image_layout(
+        _texture_image, VK_FORMAT_R8G8B8A8_SRGB,
+        VK_IMAGE_ASPECT_COLOR_BIT,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     _staging_buffer = nullptr;
 }

@@ -32,7 +32,7 @@ struct uniform_buffer_object
 
 struct Vertex
 {
-    glm::vec2 position;
+    glm::vec3 position;
     glm::vec3 color;
     glm::vec2 texture_coord;
 };
@@ -130,7 +130,17 @@ public:
     void print_supported_extantions();
     void create_instance();
     void draw_frame();
+    void create_image(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
+                      VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage image, VkDeviceMemory memory);
+    uint32_t find_memory_type(uint32_t memory_type_filter, VkMemoryPropertyFlags properties);
+    VkFormat find_supported_format(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+    VkFormat find_depth_format();
+    VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect);
     const char **enumerateExtations(uint32_t *);
+    VkCommandBuffer begin_single_time_commands();
+    void end_single_time_commands(VkCommandBuffer command_buffer);
+    void transition_image_layout(VkImage image, VkFormat format, VkImageAspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
+    bool hasStencilComponent(VkFormat format);
     void print_required_extantions();
     void destroy_instance();
     void createLogicalDevice();
