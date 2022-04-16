@@ -10,3 +10,6 @@
 [submodule "3dparty/stb"]
 	path = 3dparty/stb
 	url = https://github.com/nothings/stb
+[submodule "3dparty/tinyobject"]
+	path = 3dparty/tinyobject
+	url = https://github.com/tinyobjloader/tinyobjloader
