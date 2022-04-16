@@ -170,6 +170,7 @@ vulkan_context::vulkan_context(Window &wnd, bool is_debug_en)
     createLogicalDevice();
     create_swapchain();
     graphic_pipeline_init();
+    create_command_buffers();
     renderpass_init();
     create_renderpass();
     create_graphic_pipeline();
@@ -178,7 +179,6 @@ vulkan_context::vulkan_context(Window &wnd, bool is_debug_en)
     sampler_init();
     texture_init("../textures/texture.jpg");
     allocate_descriptor_sets();
-    create_command_buffers();
     create_sync_objects();
 }
 template <typename T>
@@ -304,7 +304,7 @@ logical_device &vulkan_context::get_logical_device()
 
 void vulkan_context::renderpass_init()
 {
-    _renderpass = std::make_unique<renderpass>(*this);
+    _renderpass = std::make_unique<renderpass>(this);
 }
 
 void vulkan_context::create_renderpass()
@@ -500,7 +500,7 @@ texture &vulkan_context::get_texture()
 
 void vulkan_context::create_image(
     uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
-    VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage image, VkDeviceMemory memory)
+    VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &memory)
 {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -580,7 +580,7 @@ VkFormat vulkan_context::find_depth_format()
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
-VkImageView vulkan_context::create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect)
+VkImageView vulkan_context::create_image_view(VkImage &image, VkFormat format, VkImageAspectFlags aspect)
 {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

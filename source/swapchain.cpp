@@ -1,7 +1,7 @@
 #include <swapchain.h>
 #include <graphic_pipeline.h>
 #include <buffer.h>
-#include<interface.h>
+#include <interface.h>
 
 // std
 #include <stdexcept>
@@ -281,9 +281,13 @@ void swapchain::record_buffer(VkCommandBuffer command_buffer, uint32_t image_ind
     renderpass_befin_info.framebuffer = _vk_context.get_renderpass().get_framebuffers()[image_index];
     renderpass_befin_info.renderArea.offset = {0, 0};
     renderpass_befin_info.renderArea.extent = _extent;
-    renderpass_befin_info.clearValueCount = 1;
-    VkClearValue clear_value = {0.8, 0.8, 0.8, 1.0};
-    renderpass_befin_info.pClearValues = &clear_value;
+
+    std::array<VkClearValue, 2> clear_values;
+    clear_values[0] = {0.8, 0.8, 0.8, 1.0};
+    clear_values[1] = {1.0f, 0};
+
+    renderpass_befin_info.clearValueCount = clear_values.size();
+    renderpass_befin_info.pClearValues = clear_values.data();
     vkCmdBeginRenderPass(command_buffer, &renderpass_befin_info, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _vk_context.get_pipeline().get_vk_handle());
 
@@ -357,7 +361,7 @@ VkCommandPool &swapchain::get_command_pool(pool_type type)
     }
 }
 
-
-size_t swapchain::get_max_frames_in_flight(){
+size_t swapchain::get_max_frames_in_flight()
+{
     return _max_frames_in_flight;
 }

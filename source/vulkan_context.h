@@ -131,11 +131,11 @@ public:
     void create_instance();
     void draw_frame();
     void create_image(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
-                      VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage image, VkDeviceMemory memory);
+                      VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &memory);
     uint32_t find_memory_type(uint32_t memory_type_filter, VkMemoryPropertyFlags properties);
     VkFormat find_supported_format(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
     VkFormat find_depth_format();
-    VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect);
+    VkImageView create_image_view(VkImage &image, VkFormat format, VkImageAspectFlags aspect);
     const char **enumerateExtations(uint32_t *);
     VkCommandBuffer begin_single_time_commands();
     void end_single_time_commands(VkCommandBuffer command_buffer);

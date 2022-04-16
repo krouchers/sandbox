@@ -8,7 +8,7 @@ depth_buffer::depth_buffer(vulkan_context *vk_cont) : _vk_context{vk_cont}
         _vk_context->get_swapchain().get_extent().width,
         _vk_context->get_swapchain().get_extent().height,
         _vk_context->find_depth_format(), VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, _depth_image, _depth_image_memory);
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _depth_image, _depth_image_memory);
 
     _depth_image_view = _vk_context->create_image_view(_depth_image, _vk_context->find_depth_format(), VK_IMAGE_ASPECT_DEPTH_BIT);
     _vk_context->transition_image_layout(
@@ -16,13 +16,9 @@ depth_buffer::depth_buffer(vulkan_context *vk_cont) : _vk_context{vk_cont}
         _vk_context->find_depth_format(),
         VK_IMAGE_ASPECT_DEPTH_BIT,
         VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
-bool depth_buffer::is_having_stencil_comp(VkFormat format)
-{
-    return (format == VK_FORMAT_D24_UNORM_S8_UINT or format == VK_FORMAT_D32_SFLOAT_S8_UINT);
-}
 
 VkImageView depth_buffer::get_image_view()
 {

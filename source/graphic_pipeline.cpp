@@ -125,6 +125,12 @@ void graphic_pipeline::create_graphic_pipeline()
     if (vkCreatePipelineLayout(_vk_context.get_logical_device().get_vk_handler(), &layout_info, nullptr, &_pipeline_layout) != VK_SUCCESS)
         throw std::runtime_error("failed to create pipeline layout");
 
+    VkPipelineDepthStencilStateCreateInfo depth_info{};
+    depth_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depth_info.depthTestEnable = VK_TRUE;
+    depth_info.depthWriteEnable = VK_TRUE;
+    depth_info.depthCompareOp = VK_COMPARE_OP_LESS;
+
     VkGraphicsPipelineCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     info.pVertexInputState = &ver_input_info;
@@ -136,6 +142,7 @@ void graphic_pipeline::create_graphic_pipeline()
     info.layout = _pipeline_layout;
     info.renderPass = _vk_context.get_renderpass().get_vk_handle();
     info.subpass = 0;
+    info.pDepthStencilState = &depth_info;
     info.pRasterizationState = &rasterization_info;
     info.pMultisampleState = &multisample_info;
 

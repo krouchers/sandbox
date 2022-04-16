@@ -1,14 +1,13 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
-#include <vulkan_context.h>
 
+class vulkan_context;
 class depth_buffer
 {
 public:
     depth_buffer(vulkan_context *vk_cont);
     ~depth_buffer();
 
-    static bool is_having_stencil_comp(VkFormat);
     VkImageView get_image_view();
 
 private:
