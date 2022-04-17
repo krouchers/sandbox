@@ -3,6 +3,6 @@
 int main()
 {
     application app{
-        800, 600, "MyApplication"};
+        1280, 720, "MyApplication"};
     app.run();
 }

@@ -38,7 +38,7 @@ public:
     VkDeviceMemory &get_vk_device_memory_handle();
     //
     void copy_buffer(buffer &src);
-    void set_data(std::vector<T> &data);
+    void set_data(const std::vector<T> &data);
     VkVertexInputBindingDescription get_binding_description();
     void dispatch_vertex_data();
     std::vector<T> &data();

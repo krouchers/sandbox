@@ -14,6 +14,7 @@
 #include <memory>
 //
 
+class mesh;
 class sampler;
 class texture;
 class swapchain;
@@ -142,6 +143,7 @@ public:
     void transition_image_layout(VkImage image, VkFormat format, VkImageAspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
     bool hasStencilComponent(VkFormat format);
     void print_required_extantions();
+    void load_mesh(mesh &);
     void destroy_instance();
     void createLogicalDevice();
     void destroy_surface();

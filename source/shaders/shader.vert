@@ -14,7 +14,7 @@ layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 out_tex_coord;
 
 void main() {
-    gl_Position = pvm.proj * pvm.view * pvm.model * vec4(positions, 1);
+    gl_Position = pvm.proj * pvm.view * pvm.model * vec4(positions, 1.0f);
     fragColor = color;
     out_tex_coord = in_tex_coord;
 }

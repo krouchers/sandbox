@@ -145,7 +145,7 @@ std::vector<T> &buffer<T>::data()
 }
 
 template <typename T>
-void buffer<T>::set_data(std::vector<T> &data)
+void buffer<T>::set_data(const std::vector<T> &data)
 {
     _vertices = data;
     _size = sizeof(T) * _vertices.size();

@@ -1,4 +1,5 @@
 #include <vk_engine.h>
+#include <mesh.h>
 #include <texture.h>
 
 vk_engine::vk_engine(Window &window) : wnd{window}
@@ -19,26 +20,8 @@ void vk_engine::init_engine()
 #else
     context = std::make_unique<vulkan_context>(wnd);
 #endif
-    std::vector<Vertex> data = {
-        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-        {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-        {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-        {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
-
-        {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-        {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-        {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-        {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}}};
-    context->create_vertex_buffer(data.size());
-    context->get_vertex_buffer().set_data(data);
-
-    std::vector<uint32_t>
-        indices = {
-            0, 1, 2, 2, 3, 0,
-            4, 5, 6, 6, 7, 4};
-    context->create_index_buffer(indices.size());
-    context->get_index_buffer().set_data(indices);
-    context->get_texture().set_data();
+    mesh my_mesh("../models/viking_room.obj", "../textures/viking_room.png");
+    context->load_mesh(my_mesh);
 }
 
 void vk_engine::draw_frame()

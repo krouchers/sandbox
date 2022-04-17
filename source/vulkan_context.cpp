@@ -7,6 +7,7 @@
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <mesh.h>
 // std
 #include <stdexcept>
 #include <iostream>
@@ -177,9 +178,8 @@ vulkan_context::vulkan_context(Window &wnd, bool is_debug_en)
     create_descriptor_pool();
     ubos_init();
     sampler_init();
-    texture_init("../textures/texture.jpg");
-    allocate_descriptor_sets();
     create_sync_objects();
+    // texture_init("../textures/texture.jpg");
 }
 template <typename T>
 void set_buffer_data(buffer<T> &buf, std::vector<T> data)
@@ -708,4 +708,14 @@ void vulkan_context::transition_image_layout(VkImage image, VkFormat format, VkI
 bool vulkan_context::hasStencilComponent(VkFormat format)
 {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+}
+void vulkan_context::load_mesh(mesh &mesh)
+{
+    create_vertex_buffer(mesh.get_vertices().size());
+    get_vertex_buffer().set_data(mesh.get_vertices());
+    create_index_buffer(mesh.get_indices().size());
+    get_index_buffer().set_data(mesh.get_indices());
+    texture_init(mesh.get_texture_path());
+    _texture->set_data();
+    allocate_descriptor_sets();
 }
