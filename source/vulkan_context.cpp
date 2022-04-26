@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <mesh.h>
+#include <interface.h>
 // std
 #include <stdexcept>
 #include <iostream>
@@ -718,4 +719,14 @@ void vulkan_context::load_mesh(mesh &mesh)
     texture_init(mesh.get_texture_path());
     _texture->set_data();
     allocate_descriptor_sets();
+}
+
+void vulkan_context::init_interface(gui::interface *inter)
+{
+    _interface = inter;
+}
+
+gui::interface *vulkan_context::get_interface()
+{
+    return _interface;
 }

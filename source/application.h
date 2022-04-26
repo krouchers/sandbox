@@ -10,7 +10,7 @@ class application
 {
     std::unique_ptr<vk_engine> my_engine;
     std::unique_ptr<Window> window;
-    std::unique_ptr<interface> _interface;
+    std::unique_ptr<gui::interface> _interface;
 
 public:
     application(int width, int height, std::string app_name);

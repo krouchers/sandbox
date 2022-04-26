@@ -1,6 +1,8 @@
 #include <mesh.h>
 #include <tiny_obj_loader.h>
 #include <stdexcept>
+#include<unordered_map>
+#include<map>
 
 mesh::mesh(const std::string model_path, const std::string texture_path)
     : _model_path{model_path}, _texture_path{texture_path}

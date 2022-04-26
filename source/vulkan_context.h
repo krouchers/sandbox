@@ -1,5 +1,4 @@
 #pragma once
-#include <window.h>
 #include <debug.h>
 #include <physicalDevice.h>
 #include <logical_device.h>
@@ -7,6 +6,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
+#include<interface.h>
 
 // std
 #include <vector>
@@ -14,6 +14,7 @@
 #include <memory>
 //
 
+class Window;
 class mesh;
 class sampler;
 class texture;
@@ -36,6 +37,9 @@ struct Vertex
     glm::vec3 position;
     glm::vec3 color;
     glm::vec2 texture_coord;
+
+    Vertex() = default;
+    ~Vertex() = default;
 };
 
 struct extAndLayerInfo
@@ -65,6 +69,8 @@ private:
     std::unique_ptr<texture> _texture;
     std::unique_ptr<sampler> _sampler;
 
+    gui::interface *_interface;
+
     const bool is_debug_enabled;
     std::vector<std::unique_ptr<buffer<uniform_buffer_object>>> _ubos;
     std::vector<VkDescriptorSet> _descriptor_sets;
@@ -84,6 +90,7 @@ public:
     vulkan_context &operator=(vulkan_context &&);
     std::vector<std::unique_ptr<buffer<uniform_buffer_object>>> &get_ubos();
     // geters
+    gui::interface *get_interface();
     sampler &get_sampler();
     texture &get_texture();
     std::vector<VkDescriptorSet> &get_descriptor_sets();
@@ -125,6 +132,7 @@ public:
     void create_renderpass();
     void create_swapchain();
     void write_descriptor_sets();
+    void init_interface(gui::interface *);
     void destroy_device();
     void create_index_buffer(size_t size);
     extAndLayerInfo getExtAndLayersInfo() noexcept;

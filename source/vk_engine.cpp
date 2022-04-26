@@ -22,6 +22,7 @@ void vk_engine::init_engine()
 #endif
     mesh my_mesh("../models/viking_room.obj", "../textures/viking_room.png");
     context->load_mesh(my_mesh);
+    context->get_swapchain().record_all_command_buffers();
 }
 
 void vk_engine::draw_frame()

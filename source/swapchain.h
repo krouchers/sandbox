@@ -2,7 +2,7 @@
 #include <window.h>
 #include <vulkan/vulkan_core.h>
 #include <vulkan_context.h>
-#include<swapchain.h>
+#include <swapchain.h>
 
 enum pool_type
 {
@@ -63,6 +63,7 @@ public:
     void create_uniform_buffers();
     void create_swapchain();
     void create_surface();
+    void record_all_command_buffers();
     // geters
     VkQueue *get_grapchic_queue();
     VkQueue *get_present_queue();
@@ -73,5 +74,6 @@ public:
     VkSurfaceKHR get_surface();
     VkExtent2D get_extent();
     VkSurfaceFormatKHR get_surface_format();
+    VkImageView &get_image_view(uint32_t image_index);
     //
 };

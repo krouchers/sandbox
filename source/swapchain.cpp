@@ -146,6 +146,14 @@ swapchain::~swapchain()
     vkDestroySurfaceKHR(_vk_context.get_instance(), _surface, nullptr);
 }
 
+void swapchain::record_all_command_buffers()
+{
+    for (size_t i = 0; i < _command_buffers.size(); ++i)
+    {
+        record_buffer(_command_buffers[i], i);
+    }
+}
+
 void swapchain::draw_frame()
 {
     static uint32_t current_frame = 0;
@@ -160,8 +168,8 @@ void swapchain::draw_frame()
 
     _vk_context.update_ubo(current_frame);
     _vk_context.get_ubos()[current_frame]->dispatch_vertex_data();
-    vkResetCommandBuffer(_command_buffers[current_frame], 0);
-    record_buffer(_command_buffers[current_frame], image_index);
+    _vk_context.get_interface()->draw(current_frame);
+    // record_buffer(_command_buffers[current_frame], image_index);
 
     VkSemaphore semophores_wait[] = {_is_image_available_semaphores[current_frame]};
     VkPipelineStageFlags stages_for_wait[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
@@ -173,8 +181,10 @@ void swapchain::draw_frame()
     sub_info.pWaitSemaphores = semophores_wait;
     sub_info.pWaitDstStageMask = stages_for_wait;
 
-    sub_info.commandBufferCount = 1;
-    sub_info.pCommandBuffers = &_command_buffers[current_frame];
+    std::array<VkCommandBuffer, 2> command_buffers{
+        _command_buffers[current_frame], _vk_context.get_interface()->get_command_buffer(current_frame)};
+    sub_info.commandBufferCount = command_buffers.size();
+    sub_info.pCommandBuffers = command_buffers.data();
 
     sub_info.signalSemaphoreCount = 1;
     sub_info.pSignalSemaphores = semophores_signal;
@@ -206,7 +216,7 @@ void swapchain::create_command_pools()
 
     VkCommandPoolCreateInfo transfer_info{};
     transfer_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    transfer_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+    transfer_info.flags = /*VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | */ VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
     transfer_info.queueFamilyIndex = _vk_context.get_physical_device().queueFamilies.transferFamily.value();
 
     if (vkCreateCommandPool(_vk_context.get_logical_device().get_vk_handler(), &graphic_info, nullptr, &_graphic_command_pool) != VK_SUCCESS)
@@ -266,6 +276,11 @@ void swapchain::create_command_buffers()
         if (vkAllocateCommandBuffers(_vk_context.get_logical_device().get_vk_handler(), &info, &command_buffer) != VK_SUCCESS)
             throw std::runtime_error("faildet to allocate command buffer");
     }
+}
+
+VkImageView &swapchain::get_image_view(uint32_t image_index)
+{
+    return swapchainImageViews[image_index];
 }
 
 void swapchain::record_buffer(VkCommandBuffer command_buffer, uint32_t image_index)
