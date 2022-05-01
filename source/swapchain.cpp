@@ -169,7 +169,7 @@ void swapchain::draw_frame()
     _vk_context.update_ubo(current_frame);
     _vk_context.get_ubos()[current_frame]->dispatch_vertex_data();
     _vk_context.get_interface()->draw(current_frame);
-    // record_buffer(_command_buffers[current_frame], image_index);
+     record_buffer(_command_buffers[current_frame], image_index);
 
     VkSemaphore semophores_wait[] = {_is_image_available_semaphores[current_frame]};
     VkPipelineStageFlags stages_for_wait[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};

@@ -36,6 +36,10 @@ void vulkan_context::destroy_ubos()
         ubo = nullptr;
     }
 }
+
+void vulkan_context::destroy_final_index_buffer(){
+    _index_buffer = nullptr;
+}
 vulkan_context::~vulkan_context()
 {
     _sampler = nullptr;
@@ -176,7 +180,6 @@ vulkan_context::vulkan_context(Window &wnd, bool is_debug_en)
     renderpass_init();
     create_renderpass();
     create_graphic_pipeline();
-    create_descriptor_pool();
     ubos_init();
     sampler_init();
     create_sync_objects();
@@ -395,8 +398,11 @@ void vulkan_context::update_ubo(uint32_t current_frame)
     uniform_buffer_object ubo{};
     auto current_time = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0, 0, 1));
+    (void)time;
+    ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(_interface->get_rotation_state().z), glm::vec3(0.0f, 0.0f, 1.0f)) *
+                glm::rotate(glm::mat4(1.0f), glm::radians(_interface->get_rotation_state().y), glm::vec3(0.0f, 1.0f, 0.0f)) *
+                glm::rotate(glm::mat4(1.0f), glm::radians(_interface->get_rotation_state().x), glm::vec3(1.0f, 0.0f, 0.0f));
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(.8f, 0.0f, 0.0f), glm::vec3(0, 0, 1));
     ubo.proj = glm::perspective(glm::radians(45.0f), _swapchain->get_extent().width / (float)_swapchain->get_extent().height, 0.1f, 10.0f);
     ubo.proj[1][1] *= -1;
     auto data = std::vector<uniform_buffer_object>{ubo};
@@ -718,12 +724,14 @@ void vulkan_context::load_mesh(mesh &mesh)
     get_index_buffer().set_data(mesh.get_indices());
     texture_init(mesh.get_texture_path());
     _texture->set_data();
+    create_descriptor_pool();
     allocate_descriptor_sets();
 }
 
-void vulkan_context::init_interface(gui::interface *inter)
+void vulkan_context::init_interface(gui::interface *inter, rotation_state *rot_state)
 {
     _interface = inter;
+    _interface->set_rotation_state(rot_state);
 }
 
 gui::interface *vulkan_context::get_interface()

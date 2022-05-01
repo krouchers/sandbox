@@ -5,13 +5,13 @@
 #include <vector>
 //
 
-application::application(int width, int height, std::string app_name)
+application::application(int width, int height, std::string app_name) : _app_state{}
 {
     window = std::make_unique<Window>(width, height, app_name);
     window->set_user_pointer(this);
     my_engine = std::make_unique<vk_engine>(*window.get());
-    _interface = std::make_unique<gui::interface>(*window.get(), my_engine->get_vk_context());
-    my_engine->get_vk_context()->init_interface(_interface.get());
+    _interface = std::make_unique<gui::interface>(*window.get(), my_engine.get());
+    my_engine->get_vk_context()->init_interface(_interface.get(), &_app_state.rot_state);
 }
 
 void application::run()
@@ -26,20 +26,6 @@ void application::run()
 void application::draw_frame()
 {
     my_engine->draw_frame();
-    // _interface->draw();
-}
-
-glm::vec2 application::get_mause_position()
-{
-    return window->get_cursor_pos();
-}
-
-void application::draw_triangle(glm::vec2 pos)
-{
-    uint16_t size_factor{3};
-    glm::vec2 left_pos{pos.x - size_factor, pos.y + size_factor};
-    glm::vec2 right_pos{(pos.x - left_pos.x) * size_factor + left_pos.x, pos.y + size_factor};
-    glm::vec2 up_pos{pos.x, pos.y - size_factor};
 }
 
 Window *application::get_window()

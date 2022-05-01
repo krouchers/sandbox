@@ -15,6 +15,7 @@ class mesh
 
 public:
     mesh(const std::string model_path, const std::string);
+    mesh();
     //geters
     std::vector<Vertex> &get_vertices();
     std::vector<uint32_t> &get_indices();

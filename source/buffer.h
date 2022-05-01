@@ -42,7 +42,7 @@ public:
     VkVertexInputBindingDescription get_binding_description();
     void dispatch_vertex_data();
     std::vector<T> &data();
-    std::array<VkVertexInputAttributeDescription, 3> get_atribute_description();
+    std::array<VkVertexInputAttributeDescription, 4> get_atribute_description();
     void create_buffer();
 };
 

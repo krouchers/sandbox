@@ -6,7 +6,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
-#include<interface.h>
+#include <interface.h>
 
 // std
 #include <vector>
@@ -37,6 +37,7 @@ struct Vertex
     glm::vec3 position;
     glm::vec3 color;
     glm::vec2 texture_coord;
+    glm::vec3 normal;
 
     Vertex() = default;
     ~Vertex() = default;
@@ -114,9 +115,10 @@ public:
     void create_texture(const std::string path);
     void ubos_init();
     void interface_init();
-    void update_ubo(uint32_t);
+    void update_ubo(uint32_t current_frame);
     void destroy_staged_vertex_buffer();
     void destroy_final_vertex_buffer();
+    void destroy_final_index_buffer();
     void sampler_init();
     void create_vertex_buffer(size_t size);
     buffer<Vertex> create_staged_vertex_buffer(std::vector<Vertex> &data);
@@ -132,7 +134,7 @@ public:
     void create_renderpass();
     void create_swapchain();
     void write_descriptor_sets();
-    void init_interface(gui::interface *);
+    void init_interface(gui::interface *inter, rotation_state *rot_state);
     void destroy_device();
     void create_index_buffer(size_t size);
     extAndLayerInfo getExtAndLayersInfo() noexcept;

@@ -51,8 +51,6 @@ void Window::cursorMovedCallBack(GLFWwindow *window, double width, double height
     (void)window;
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
     {
-        application *app = reinterpret_cast<application *>(glfwGetWindowUserPointer(window));
-        app->draw_triangle(app->get_mause_position());
     }
 }
 
@@ -76,11 +74,10 @@ int Window::get_width()
 
 void Window::mauseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 {
+    (void)window;
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
         std::cout << "[MOUSE EVENT] button was pressed" << std::endl;
-        application *app = reinterpret_cast<application *>(glfwGetWindowUserPointer(window));
-        app->draw_triangle(app->get_window()->get_cursor_pos());
     }
     (void)mods;
 }
