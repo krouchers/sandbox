@@ -12,9 +12,10 @@ class vk_engine
     std::unique_ptr<vulkan_context> context;
 
     Window &wnd;
+    application &_app;
 
 public:
-    vk_engine(Window &wnd);
+    vk_engine(Window &wnd, application &app);
     ~vk_engine();
 
     vulkan_context *get_vk_context();

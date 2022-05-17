@@ -2,21 +2,23 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <window.h>
-#include<app_state.h>
+#include <app_state.h>
+#include <timer.h>
 
 // std
 #include <vector>
 
 class vk_engine;
-enum class problems : uint8_t;
+class application;
 namespace gui
 {
     class interface
     {
         vk_engine *_vk_engine;
-        Window &_wnd;
-        VkRenderPass _renderpass;
+        application &_app;
+        timer_t _timer;
 
+        VkRenderPass _renderpass;
         VkCommandPool _command_pool;
 
         std::vector<VkCommandBuffer> _command_buffers;
@@ -29,7 +31,7 @@ namespace gui
         void create_command_buffer();
         void record_command_buffer(VkCommandBuffer command_buffer, uint32_t image_index);
         void create_frame_buffers();
-        void init_interface();
+        void init_interface(Window &wnd);
 
         std::vector<VkFramebuffer> _frame_buffers;
         VkImageView _attachment;
@@ -42,12 +44,9 @@ namespace gui
         bool main_window_active;
         bool first_problem;
 
-        problems _current_problem;
-        problems _previous_problem;
-
     public:
         void init_interface_layout(void (*user_layout)());
-        interface(Window &wnd, vk_engine *vk_eng);
+        interface(Window &wnd, vk_engine *vk_eng, application &app);
         void set_rotation_state(rotation_state *);
         const rotation_state &get_rotation_state();
         ~interface();

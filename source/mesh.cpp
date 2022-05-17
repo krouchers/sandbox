@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <map>
 
-mesh::mesh(const std::string model_path, const std::string texture_path = "../textures/viking_room.png")
+mesh::mesh(const std::string model_path, const std::string texture_path = "../assets/textures/viking_room.png")
     : _model_path{model_path}, _texture_path{texture_path}
 {
     load_model();
@@ -19,7 +19,7 @@ void mesh::load_model()
     std::string warn, err;
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, _model_path.c_str()))
     {
-        throw std::runtime_error("failed to load object with path");
+        throw std::runtime_error("failed to load object with path" + _model_path);
     }
 
     for (const auto &shape : shapes)
@@ -40,7 +40,7 @@ void mesh::load_model()
             vertex.normal = {attrib.normals[3 * index.normal_index + 0],
                              attrib.normals[3 * index.normal_index + 1],
                              attrib.normals[3 * index.normal_index + 2]};
-            vertex.color = {1.0, 1.0, 1.0};
+            vertex.color = {.9, .9, .9};
             _vertices.push_back(vertex);
             _indices.push_back(_indices.size());
         }
@@ -61,6 +61,6 @@ std::string mesh::get_texture_path()
 }
 
 mesh::mesh()
-    : mesh("../models/cube.obj", "../textures/viking_room.png")
+    : mesh("../assets/models/cube.obj", "../assets/textures/viking_room.png")
 {
 }

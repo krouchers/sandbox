@@ -14,13 +14,13 @@ layout(location = 3) in vec3 normal;
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 out_tex_coord;
 
-const vec3 direction_to_light = normalize(vec3(2.0, 2.0, 1.5));
+const vec3 direction_to_light = normalize(vec3(4.0, 3.5, 5.5));
 
 void main() {
 
     vec3 world_space_normal = normalize(mat3(pvm.model) * normal);
 
-    float light_intensity = max(dot(world_space_normal, direction_to_light), 0.4);
+    float light_intensity = clamp(dot(world_space_normal, direction_to_light), 0.6,0.86);
 
     gl_Position = pvm.proj * pvm.view * pvm.model * vec4(positions, 1.0f);
     fragColor = light_intensity * color;

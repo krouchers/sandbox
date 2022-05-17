@@ -4,13 +4,16 @@
 #include <swapchain.h>
 #include <vulkan/vulkan_core.h>
 #include <graphic_pipeline.h>
-#include <file_stream.h>
+#include <IO.h>
 #include <application.h>
 #include <mesh.h>
 #include <string>
+#include <chrono>
+#include<numeric>
 
 namespace gui
 {
+    using namespace std::literals;
     void interface::create_command_buffer()
     {
         _command_buffers.resize(2);
@@ -22,23 +25,21 @@ namespace gui
         vkAllocateCommandBuffers(_vk_engine->get_vk_context()->get_logical_device().get_vk_handler(),
                                  &alloc_info, _command_buffers.data());
     }
-    interface::interface(Window &wnd, vk_engine *vk_eng)
+
+    interface::interface(Window &wnd, vk_engine *vk_eng, application &app)
         : _vk_engine{vk_eng},
-          _wnd{wnd},
-          main_window_active{true},
-          first_problem{false},
-          _current_problem{problems::CUBE},
-          _previous_problem{problems::CUBE}
+          _app{app}, main_window_active{true},
+          first_problem{false}
     {
-        init_interface();
+        init_interface(wnd);
     }
 
-    void interface::init_interface()
+    void interface::init_interface(Window &wnd)
     {
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
 
-        ImGui_ImplGlfw_InitForVulkan(_wnd.getglfwWindow(), true);
+        ImGui_ImplGlfw_InitForVulkan(wnd.getglfwWindow(), true);
 
         create_descriptor_pool();
         create_renderpass();
@@ -222,6 +223,7 @@ namespace gui
 
     void interface::create_gui_layout()
     {
+        app_state &app_state = _app.get_app_state();
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize({(float)1280, (float)0});
         if (main_window_active)
@@ -238,30 +240,37 @@ namespace gui
                     ImGui::SetNextWindowSize(ImVec2(400, 502));
                     if (ImGui::MenuItem("Куб"))
                     {
+                        app_state.current_problem = problems_list::CUBE;
                         _vk_engine->destroy_loaded_mesh();
-                        mesh cube{};
-                        _vk_engine->load_mesh(cube);
-                        _current_problem = problems::CUBE;
+                        _vk_engine->load_mesh(_app.get_problems()[app_state.current_problem].get_mesh());
                     }
-                    if (ImGui::MenuItem("Параллелограм"))
+                    if (ImGui::MenuItem("Параллелограм и цилиндр"))
                     {
+                        app_state.current_problem = problems_list::PARAL;
                         _vk_engine->destroy_loaded_mesh();
-                        mesh paral{
-                            std::string("../models/paral.obj"),
-                            std::string("../textures/viking_room.png")};
-                        _vk_engine->load_mesh(paral);
-                        _current_problem = problems::PARAL;
+                        _vk_engine->load_mesh(_app.get_problems()[problems_list::PARAL].get_mesh());
+                    }
+                    if (ImGui::MenuItem("Усеченная пирамида"))
+                    {
+                        app_state.current_problem = problems_list::PYRAMID;
+                        _vk_engine->destroy_loaded_mesh();
+                        _vk_engine->load_mesh(_app.get_problems()[problems_list::PYRAMID].get_mesh());
+                    }
+                    if (ImGui::MenuItem("Икосаэдр"))
+                    {
+                        app_state.current_problem = problems_list::ICO;
+                        _vk_engine->destroy_loaded_mesh();
+                        _vk_engine->load_mesh(_app.get_problems()[problems_list::ICO].get_mesh());
                     }
                     if (ImGui::MenuItem("Октаэдр"))
                     {
-                        main_window_active = false;
-                    }
-                    if (ImGui::MenuItem("Гексаэдр"))
-                    {
-                        main_window_active = false;
+                        app_state.current_problem = problems_list::OCT;
+                        _vk_engine->destroy_loaded_mesh();
+                        _vk_engine->load_mesh(_app.get_problems()[problems_list::OCT].get_mesh());
                     }
                     if (ImGui::MenuItem("Выход"))
                     {
+                        _app.close();
                     }
                     ImGui::EndMenu();
                 }
@@ -273,33 +282,7 @@ namespace gui
             {
                 if (ImGui::Begin("Условие", &first_problem, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
                 {
-                    std::string file_read_from{};
-                    switch (_current_problem)
-                    {
-                    case problems::CUBE:
-                    {
-                        _current_problem = problems::CUBE;
-                        if (_current_problem != _previous_problem)
-                        {
-                        }
-                        file_read_from = "../misc/problems/1.txt";
-                        break;
-                    }
-                    case problems::PARAL:
-                    {
-                        _current_problem = problems::PARAL;
-                        if (_current_problem != _previous_problem)
-                        {
-                        }
-                        file_read_from = "../misc/problems/2.txt";
-                        break;
-                    }
-                    default:
-                        break;
-                    }
-                    auto text = IO::read_text_from_file(file_read_from);
-                    for (const auto &str : text)
-                        ImGui::Text(str.c_str());
+                    ImGui::Text(_app.get_problems()[app_state.current_problem].get_text().c_str());
                     ImGui::End();
                 }
 
@@ -313,9 +296,40 @@ namespace gui
                 ImGui::End();
             }
 
-            // ImGui::Text(IO::read_text_from_file("../misc/problems/1.txt").c_str()); // Display some text (you can use a format strings too)
-            // ImGui::Begin("Привет,мир!");             // Create a window called "Hello, world!" and append into it.
-            // ImGui::End();
+            ImGui::SetNextWindowPos({1000, 600});
+            ImGui::SetNextWindowSize({280, 120});
+            ImGui::Begin("Ответ", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
+            ImGui::Text("Ответ:");
+            ImGui::InputScalar("##", ImGuiDataType_U32, &app_state.input_answer, 0, nullptr, nullptr, ImGuiInputTextFlags_CharsDecimal);
+
+            static bool is_answer_right = false;
+            static bool is_answer_not_right = false;
+            if (ImGui::Button("Ок"))
+            {
+                _timer.begin_counting_for(3s);
+                if (app_state.input_answer == _app.get_problems()[app_state.current_problem].get_answer())
+                {
+                    is_answer_right = true;
+                    is_answer_not_right = false;
+                }
+                else
+                {
+                    is_answer_not_right = true;
+                    is_answer_right = false;
+                }
+            }
+
+            if (is_answer_right)
+            {
+                if (!_timer.is_expired())
+                    ImGui::TextColored(ImVec4(0, 1, 0, 1), "Верно");
+            }
+            if (is_answer_not_right)
+            {
+                if (!_timer.is_expired())
+                    ImGui::TextColored(ImVec4(1, 0, 0, 1), "Неверно");
+            }
+            ImGui::End();
         }
         ImGui::Render();
     }

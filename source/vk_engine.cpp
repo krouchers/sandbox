@@ -1,8 +1,9 @@
 #include <vk_engine.h>
 #include <mesh.h>
 #include <texture.h>
+#include<application.h>
 
-vk_engine::vk_engine(Window &window) : wnd{window}
+vk_engine::vk_engine(Window &window, application &app) : wnd{window}, _app{app}
 {
     init_engine();
 }
@@ -20,10 +21,9 @@ void vk_engine::init_engine()
 #else
     context = std::make_unique<vulkan_context>(wnd);
 #endif
-    // mesh my_mesh("../models/viking_room.obj", "../textures/viking_room.png");
-    mesh my_mesh{};
-
+    mesh my_mesh{"../assets/models/cube_with_cells.obj", "../assets/textures/cells.png"};
     load_mesh(my_mesh);
+    _app.get_app_state().current_problem = problems_list::CUBE;
 }
 
 void vk_engine::load_mesh(mesh &arg)
