@@ -20,7 +20,7 @@ void main() {
 
     vec3 world_space_normal = normalize(mat3(pvm.model) * normal);
 
-    float light_intensity = clamp(dot(world_space_normal, direction_to_light), 0.6,0.86);
+    float light_intensity = clamp(dot(world_space_normal, direction_to_light), .2, 1.);
 
     gl_Position = pvm.proj * pvm.view * pvm.model * vec4(positions, 1.0f);
     fragColor = light_intensity * color;

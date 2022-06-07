@@ -280,7 +280,7 @@ namespace gui
 
             if (1)
             {
-                if (ImGui::Begin("Условие", &first_problem, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
+                if (ImGui::Begin("Условие", &first_problem, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
                 {
                     ImGui::Text(_app.get_problems()[app_state.current_problem].get_text().c_str());
                     ImGui::End();
@@ -288,11 +288,11 @@ namespace gui
 
                 ImGui::SetNextWindowPos(ImVec2(0, 530));
                 ImGui::SetNextWindowSize(ImVec2(400, 500));
-                ImGui::Begin("Повернуть фигуру: ", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
-                ImGui::Text("Повернуть фигуру");
-                ImGui::SliderFloat("по оси X", &(*_rot_state).x, 0, 360);
-                ImGui::SliderFloat("по оси Y", &(*_rot_state).y, 0, 360);
-                ImGui::SliderFloat("по оси Z", &(*_rot_state).z, 0, 360);
+                ImGui::Begin("Повернуть фигуру вокруг: ", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
+                ImGui::Text("Повернуть фигуру вокруг");
+                ImGui::SliderFloat("оси X", &(*_rot_state).x, 0, 360);
+                ImGui::SliderFloat("оси Y", &(*_rot_state).y, 0, 360);
+                ImGui::SliderFloat("оси Z", &(*_rot_state).z, 0, 360);
                 ImGui::End();
             }
 

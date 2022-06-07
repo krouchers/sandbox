@@ -298,7 +298,7 @@ void swapchain::record_buffer(VkCommandBuffer command_buffer, uint32_t image_ind
     renderpass_befin_info.renderArea.extent = _extent;
 
     std::array<VkClearValue, 2> clear_values;
-    clear_values[0] = {0.8, 0.8, 0.8, 1.0};
+    clear_values[0] = {37.f/255.f, 36.f/255.f, 109.f/255.f, 1.0};
     clear_values[1] = {1.0f, 0};
 
     renderpass_befin_info.clearValueCount = clear_values.size();
