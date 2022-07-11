@@ -3,7 +3,7 @@
 
 class stream;
 
-class application_file_system : public file_system
+class application_file_system final: public file_system
 {
 public:
     application_file_system(const char *root);
@@ -18,7 +18,7 @@ private:
     std::string _root_path;
 };
 
-class application_stream : public stream
+class application_stream final: public stream
 {
 public:
     application_stream(FILE *file_stream);

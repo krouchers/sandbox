@@ -13,6 +13,7 @@ if(USE_DEBUG)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g") 
 endif()
 project(window)
+add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS)
 
 file(GLOB_RECURSE SOURCES
 ${PROJECT_SOURCE_DIR}/source/*.cpp
@@ -62,6 +63,7 @@ target_include_directories(window PRIVATE
     ${GLM_PATH}
     ${DIR_3DPARTY}/imgui
     ${DIR_3DPARTY}/imgui/backends
+    ${DIR_3DPARTY}
     ${STB_PATH}
     ${IMGUI_DIR}/backends
     ${IMGUI_DIR}

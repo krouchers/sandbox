@@ -5,8 +5,8 @@
 int answers[5] = {
     116, 2, 50, 36, 36};
 
-problems::problems(application *app) : _app{app},
-                                       _problems_count{0}
+problems::problems(application *app) : _app{app}
+                                    //    _problems_count{0}
 {
     char buf[8];
     for (size_t i = 1;; ++i)

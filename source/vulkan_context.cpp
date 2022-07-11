@@ -156,7 +156,7 @@ void vulkan_context::print_required_extantions()
     if (required_extantions.size() != 0)
         for (const auto &extantion : required_extantions)
         {
-            printf(extantion);
+            printf("%s", extantion);
             printf("\n");
         }
     else

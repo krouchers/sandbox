@@ -6,6 +6,7 @@
 
 // std
 #include <stdexcept>
+#include<array>
 
 VkRenderPass &renderpass::get_vk_handle()
 {

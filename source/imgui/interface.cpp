@@ -4,6 +4,7 @@
 #include <swapchain.h>
 #include <vulkan/vulkan_core.h>
 #include <graphic_pipeline.h>
+#include<array>
 #include <IO.h>
 #include <application.h>
 #include <mesh.h>
@@ -202,7 +203,7 @@ namespace gui
         renderpass_befin_info.renderArea.extent = _vk_engine->get_vk_context()->get_swapchain().get_extent();
 
         std::array<VkClearValue, 1> clear_values;
-        clear_values[0] = {0.8, 0.8, 0.8, 1.0};
+        clear_values[0] = {{{0.8, 0.8, 0.8, 1.0}}};
 
         renderpass_befin_info.clearValueCount = clear_values.size();
         renderpass_befin_info.pClearValues = clear_values.data();
@@ -236,7 +237,7 @@ namespace gui
             if (ImGui::BeginMenuBar())
                 if (ImGui::BeginMenu("Задачи"))
                 {
-                    ImGui::SetNextWindowPos(ImVec2(0, 27));
+                    ImGui::SetNextWindowPos(ImVec2(10, 2));
                     ImGui::SetNextWindowSize(ImVec2(400, 502));
                     if (ImGui::MenuItem("Куб"))
                     {
@@ -282,7 +283,7 @@ namespace gui
             {
                 if (ImGui::Begin("Условие", &first_problem, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
                 {
-                    ImGui::Text(_app.get_problems()[app_state.current_problem].get_text().c_str());
+                    ImGui::Text("%s", _app.get_problems()[app_state.current_problem].get_text().c_str());
                     ImGui::End();
                 }
 
