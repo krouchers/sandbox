@@ -30,7 +30,6 @@ namespace gui
         void create_renderpass();
         void create_command_buffer();
         void record_command_buffer(VkCommandBuffer command_buffer, uint32_t image_index);
-        void create_frame_buffers();
         void init_interface(Window &wnd);
 
         std::vector<VkFramebuffer> _frame_buffers;
@@ -45,11 +44,13 @@ namespace gui
         bool first_problem;
 
     public:
-        void init_interface_layout(void (*user_layout)());
         interface(Window &wnd, vk_engine *vk_eng, application &app);
+        ~interface();
+        void destroy_framebuffers();
+        void create_framebuffers();
+        void init_interface_layout(void (*user_layout)());
         void set_rotation_state(rotation_state *);
         const rotation_state &get_rotation_state();
-        ~interface();
         void draw(uint32_t);
         VkCommandBuffer get_command_buffer(uint32_t image_index);
     };

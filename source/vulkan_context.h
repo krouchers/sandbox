@@ -106,6 +106,7 @@ public:
     buffer<uint32_t> &get_index_buffer();
     void destroy_ubos();
     void destroy_descriptor_sets();
+    void destroy_current_swapchain();
     //
     // seters
     template <typename T>
@@ -125,6 +126,7 @@ public:
     buffer<uint32_t> create_staged_index_buffer(std::vector<uint32_t> &data);
     void create_final_vertex_buffer(size_t);
     void create_sync_objects();
+    void create_image_views();
     void create_descriptor_pool();
     void populate_descriptors();
     void allocate_descriptor_sets();
@@ -133,6 +135,7 @@ public:
     void renderpass_init();
     void create_renderpass();
     void create_swapchain();
+    void recreate_swapchain();
     void write_descriptor_sets();
     void init_interface(gui::interface *inter, rotation_state *rot_state);
     void destroy_device();

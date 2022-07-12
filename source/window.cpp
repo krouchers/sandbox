@@ -12,7 +12,7 @@ Window::Window(int w, int h, std::string name)
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     _window = glfwCreateWindow(_width, _height, name.c_str(), nullptr, nullptr);
     glfwSetFramebufferSizeCallback(_window, resizeCallBack);
     glfwSetCursorPosCallback(_window, cursorMovedCallBack);
@@ -42,6 +42,10 @@ GLFWwindow *Window::getglfwWindow()
 void Window::resizeCallBack(GLFWwindow *window, int width, int height)
 {
     std::cout << "window is resized with " << width << " and " << height << std::endl;
+    application *app = reinterpret_cast<application *>(glfwGetWindowUserPointer(window));
+    app->get_window()->_height = height;
+    app->get_window()->_width = width;
+    app->get_vk_engine().recreate_swapchain();
     (void)window;
 }
 
@@ -62,12 +66,12 @@ glm::vec2 Window::get_cursor_pos()
     return pos;
 }
 
-int Window::get_height()
+uint32_t Window::get_height()
 {
     return _height;
 }
 
-int Window::get_width()
+uint32_t Window::get_width()
 {
     return _width;
 }

@@ -52,3 +52,8 @@ void application::close()
 {
     glfwSetWindowShouldClose(window->getglfwWindow(), true);
 }
+
+vk_engine &application::get_vk_engine()
+{
+    return *my_engine.get();
+}

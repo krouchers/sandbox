@@ -23,8 +23,8 @@ public:
 
     // geters
     glm::vec2 get_cursor_pos();
-    int get_height();
-    int get_width();
+    uint32_t get_height();
+    uint32_t get_width();
     //
 private:
     void run();
@@ -33,5 +33,5 @@ private:
     static void resizeCallBack(GLFWwindow *window, int width, int height);
     static void cursorMovedCallBack(GLFWwindow *window, double widht, double height);
     static void mauseButtonCallback(GLFWwindow *window, int button, int action, int mods);
-    int _width, _height;
+    uint32_t _width, _height;
 };

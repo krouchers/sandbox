@@ -17,10 +17,15 @@ class renderpass
     std::vector<VkFramebuffer> swapchain_framebuffers;
 
 public:
-    void create_framebuffers();
-    void create_renderpass();
-    VkRenderPass &get_vk_handle();
-    std::vector<VkFramebuffer> get_framebuffers();
     renderpass(vulkan_context *);
     ~renderpass();
+    void create_framebuffers();
+    void create_renderpass();
+    void recreate_framebuffers();
+    void destroy_framebuffers();
+    VkRenderPass &get_vk_handle();
+    std::vector<VkFramebuffer> &get_framebuffers();
+    //geters
+    void destroy_depth_buffer();
+    void create_depth_buffer();
 };

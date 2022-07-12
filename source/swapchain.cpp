@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
-#include<array>
+#include <array>
 #include <stdexcept>
 
 void swapchain::create_surface()
@@ -23,6 +23,36 @@ void swapchain::create_surface()
 
 swapchain::swapchain(vulkan_context &context) : _vk_context{context}
 {
+}
+
+void swapchain::recreate_swapchain()
+{
+    _extent = {
+        static_cast<uint32_t>(_vk_context.getWindow().get_width()),
+        static_cast<uint32_t>(_vk_context.getWindow().get_height())};
+
+    VkSwapchainCreateInfoKHR create_info{};
+    create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    create_info.surface = _vk_context.get_swapchain().get_surface();
+    create_info.minImageCount = _image_count;
+    create_info.imageFormat = _surface_format.format;
+    create_info.imageColorSpace = _surface_format.colorSpace;
+    create_info.imageExtent = _extent;
+    create_info.imageArrayLayers = 1;
+    create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+    create_info.queueFamilyIndexCount = _family_indices.size();
+    create_info.pQueueFamilyIndices = _family_indices.data();
+    create_info.preTransform = _vk_context.get_physical_device()._swapchainSupport.capabilities.currentTransform;
+    create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    create_info.presentMode = _present_mode;
+    create_info.clipped = VK_TRUE;
+    create_info.oldSwapchain = VK_NULL_HANDLE;
+
+    vkDestroySwapchainKHR(_vk_context.get_logical_device().get_vk_handler(), _swapchain, nullptr);
+
+    if (vkCreateSwapchainKHR(_vk_context.get_logical_device().get_vk_handler(), &create_info, nullptr, &_swapchain) != VK_SUCCESS)
+        throw std::runtime_error("failed to create swapchain");
 }
 
 VkSurfaceKHR swapchain::get_surface()
@@ -89,34 +119,36 @@ VkExtent2D swapchain::get_extent()
 {
     return _extent;
 }
-void swapchain::create_swapchain()
+void swapchain::create_swapchain(const VkExtent2D &new_extent)
 {
     _surface_format = choose_surface_format(_vk_context.get_physical_device()._swapchainSupport.surface_formats);
-    VkPresentModeKHR present_mode = choose_present_mode(_vk_context.get_physical_device()._swapchainSupport.surface_present_modes);
-    _extent = choose_extent(_vk_context.get_physical_device()._swapchainSupport.capabilities);
+    _present_mode = choose_present_mode(_vk_context.get_physical_device()._swapchainSupport.surface_present_modes);
+    _extent = ((new_extent.width == 0 && new_extent.height == 0)
+                   ? choose_extent(_vk_context.get_physical_device()._swapchainSupport.capabilities)
+                   : new_extent);
 
-    uint32_t image_count = std::clamp(
+    _image_count = std::clamp(
         _vk_context.get_physical_device()._swapchainSupport.capabilities.minImageCount + 1,
         _vk_context.get_physical_device()._swapchainSupport.capabilities.minImageCount,
         _vk_context.get_physical_device()._swapchainSupport.capabilities.maxImageCount);
 
-    uint32_t family_indices[] = {_vk_context.get_physical_device().queueFamilies.graphicFamily.value(),
-                                 _vk_context.get_physical_device().queueFamilies.presentFamily.value()};
+    _family_indices = {_vk_context.get_physical_device().queueFamilies.graphicFamily.value(),
+                       _vk_context.get_physical_device().queueFamilies.presentFamily.value()};
     VkSwapchainCreateInfoKHR create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     create_info.surface = _vk_context.get_swapchain().get_surface();
-    create_info.minImageCount = image_count;
+    create_info.minImageCount = _image_count;
     create_info.imageFormat = _surface_format.format;
     create_info.imageColorSpace = _surface_format.colorSpace;
     create_info.imageExtent = _extent;
     create_info.imageArrayLayers = 1;
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-    create_info.queueFamilyIndexCount = 2;
-    create_info.pQueueFamilyIndices = family_indices;
+    create_info.queueFamilyIndexCount = _family_indices.size();
+    create_info.pQueueFamilyIndices = _family_indices.data();
     create_info.preTransform = _vk_context.get_physical_device()._swapchainSupport.capabilities.currentTransform;
     create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    create_info.presentMode = present_mode;
+    create_info.presentMode = _present_mode;
     create_info.clipped = VK_TRUE;
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
@@ -127,8 +159,6 @@ void swapchain::create_swapchain()
     vkGetSwapchainImagesKHR(_vk_context.get_logical_device().get_vk_handler(), _swapchain, &imageCount, nullptr);
     swapchainImages.resize(imageCount);
     vkGetSwapchainImagesKHR(_vk_context.get_logical_device().get_vk_handler(), _swapchain, &imageCount, swapchainImages.data());
-
-    create_image_views();
 }
 
 swapchain::~swapchain()
@@ -170,7 +200,7 @@ void swapchain::draw_frame()
     _vk_context.update_ubo(current_frame);
     _vk_context.get_ubos()[current_frame]->dispatch_vertex_data();
     _vk_context.get_interface()->draw(current_frame);
-     record_buffer(_command_buffers[current_frame], image_index);
+    record_buffer(_command_buffers[current_frame], image_index);
 
     VkSemaphore semophores_wait[] = {_is_image_available_semaphores[current_frame]};
     VkPipelineStageFlags stages_for_wait[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
@@ -228,6 +258,7 @@ void swapchain::create_command_pools()
 
 void swapchain::create_image_views()
 {
+    swapchainImageViews.clear();
     swapchainImageViews.resize(swapchainImages.size());
     for (size_t i = 0; i < swapchainImages.size(); ++i)
     {
@@ -252,7 +283,9 @@ void swapchain::create_image_views()
         subresourceRange.layerCount = 1;
         create_info.subresourceRange = subresourceRange;
 
-        vkCreateImageView(_vk_context.get_logical_device().get_vk_handler(), &create_info, nullptr, &swapchainImageViews[i]);
+        if(vkCreateImageView(_vk_context.get_logical_device().get_vk_handler(), &create_info, nullptr, &swapchainImageViews[i]) != VK_SUCCESS){
+            throw std::runtime_error("failed to create image view");
+        }
     }
 }
 void swapchain::destroy_image_views()
@@ -299,7 +332,7 @@ void swapchain::record_buffer(VkCommandBuffer command_buffer, uint32_t image_ind
     renderpass_befin_info.renderArea.extent = _extent;
 
     std::array<VkClearValue, 2> clear_values;
-    clear_values[0] = {{{37.f/255.f, 36.f/255.f, 109.f/255.f, 1.0}}};
+    clear_values[0] = {{{37.f / 255.f, 36.f / 255.f, 109.f / 255.f, 1.0}}};
     clear_values[1] = {{{1.0f, 0}}};
 
     renderpass_befin_info.clearValueCount = clear_values.size();
@@ -321,7 +354,7 @@ void swapchain::record_buffer(VkCommandBuffer command_buffer, uint32_t image_ind
         throw std::runtime_error("failed to end frame buffer");
 }
 
-std::vector<VkImageView> swapchain::get_swapchain_imageveiws()
+std::vector<VkImageView> &swapchain::get_swapchain_imageveiws()
 {
     return swapchainImageViews;
 }
@@ -380,4 +413,9 @@ VkCommandPool &swapchain::get_command_pool(pool_type type)
 size_t swapchain::get_max_frames_in_flight()
 {
     return _max_frames_in_flight;
+}
+
+void swapchain::destroy_swapchain()
+{
+    vkDestroySwapchainKHR(_vk_context.get_logical_device().get_vk_handler(), _swapchain, nullptr);
 }

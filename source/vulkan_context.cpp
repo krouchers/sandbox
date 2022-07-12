@@ -37,7 +37,8 @@ void vulkan_context::destroy_ubos()
     }
 }
 
-void vulkan_context::destroy_final_index_buffer(){
+void vulkan_context::destroy_final_index_buffer()
+{
     _index_buffer = nullptr;
 }
 vulkan_context::~vulkan_context()
@@ -175,6 +176,7 @@ vulkan_context::vulkan_context(Window &wnd, bool is_debug_en)
     initPhysicalDevice();
     createLogicalDevice();
     create_swapchain();
+    create_image_views();
     graphic_pipeline_init();
     create_command_buffers();
     renderpass_init();
@@ -737,4 +739,24 @@ void vulkan_context::init_interface(gui::interface *inter, rotation_state *rot_s
 gui::interface *vulkan_context::get_interface()
 {
     return _interface;
+}
+
+void vulkan_context::recreate_swapchain()
+{
+    vkDeviceWaitIdle(_p_logical_device->get_vk_handler());
+    _renderpass->destroy_framebuffers();
+    _swapchain->destroy_image_views();
+    _renderpass->destroy_depth_buffer();
+    _interface->destroy_framebuffers();
+    _swapchain->destroy_swapchain();
+    _swapchain->create_swapchain({window.get_width(), window.get_height()});
+    _swapchain->create_image_views();
+    _renderpass->create_depth_buffer();
+    _renderpass->create_framebuffers();
+    _interface->create_framebuffers();
+}
+
+void vulkan_context::create_image_views()
+{ // TODO get to be more specific about sort of image views
+    _swapchain->create_image_views();
 }

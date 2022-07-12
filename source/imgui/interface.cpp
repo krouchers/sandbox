@@ -4,13 +4,13 @@
 #include <swapchain.h>
 #include <vulkan/vulkan_core.h>
 #include <graphic_pipeline.h>
-#include<array>
+#include <array>
 #include <IO.h>
 #include <application.h>
 #include <mesh.h>
 #include <string>
 #include <chrono>
-#include<numeric>
+#include <numeric>
 
 namespace gui
 {
@@ -44,7 +44,7 @@ namespace gui
 
         create_descriptor_pool();
         create_renderpass();
-        create_frame_buffers();
+        create_framebuffers();
         create_command_buffer();
 
         ImGui_ImplVulkan_InitInfo init_info{};
@@ -66,7 +66,7 @@ namespace gui
         upload_fonts();
     }
 
-    void interface::create_frame_buffers()
+    void interface::create_framebuffers()
     {
         VkFramebufferCreateInfo framebuffer_info{};
         framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -237,8 +237,8 @@ namespace gui
             if (ImGui::BeginMenuBar())
                 if (ImGui::BeginMenu("Задачи"))
                 {
-                    ImGui::SetNextWindowPos(ImVec2(10, 2));
-                    ImGui::SetNextWindowSize(ImVec2(400, 502));
+                    ImGui::SetNextWindowPos(ImVec2(0, 26));
+                    ImGui::SetNextWindowSize(ImVec2(400, 504));
                     if (ImGui::MenuItem("Куб"))
                     {
                         app_state.current_problem = problems_list::CUBE;
@@ -343,5 +343,13 @@ namespace gui
     const rotation_state &interface::get_rotation_state()
     {
         return *_rot_state;
+    }
+
+    void interface::destroy_framebuffers()
+    {
+        for (auto &framebuffer : _frame_buffers)
+        {
+            vkDestroyFramebuffer(_vk_engine->get_vk_context()->get_logical_device().get_vk_handler(), framebuffer, nullptr);
+        }
     }
 }

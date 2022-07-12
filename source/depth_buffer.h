@@ -8,6 +8,8 @@ public:
     depth_buffer(vulkan_context *vk_cont);
     ~depth_buffer();
 
+    void destroy_image();
+    void create_image();
     VkImageView get_image_view();
 
 private:

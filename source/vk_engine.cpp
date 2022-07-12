@@ -1,7 +1,7 @@
 #include <vk_engine.h>
 #include <mesh.h>
 #include <texture.h>
-#include<application.h>
+#include <application.h>
 
 vk_engine::vk_engine(Window &window, application &app) : wnd{window}, _app{app}
 {
@@ -54,4 +54,9 @@ void vk_engine::destroy_loaded_mesh()
     context->destroy_final_vertex_buffer();
     context->destroy_final_index_buffer();
     context->destroy_descriptor_sets();
+}
+
+void vk_engine::recreate_swapchain()
+{
+    context->recreate_swapchain();
 }

@@ -22,6 +22,7 @@ public:
     void load_texture(const std::string texture_path);
     void load_mesh(mesh &);
     void destroy_loaded_mesh();
+    void recreate_swapchain();
     void normalize_coordinats(glm::vec2 &);
     void create_custom_size_buffer(size_t size);
     void draw_frame();

@@ -26,12 +26,13 @@ class swapchain
     vulkan_context &_vk_context;
     VkSwapchainKHR _swapchain;
     VkExtent2D _extent;
+    uint32_t _image_count;
+    VkPresentModeKHR _present_mode;
+    std::vector<uint32_t> _family_indices;
 
     VkPresentModeKHR choose_present_mode(std::vector<VkPresentModeKHR> mods);
     VkSurfaceFormatKHR choose_surface_format(std::vector<VkSurfaceFormatKHR> formats);
     VkExtent2D choose_extent(VkSurfaceCapabilitiesKHR capabilities);
-    void create_image_views();
-    void destroy_image_views();
 
     VkSurfaceFormatKHR _surface_format;
 
@@ -55,13 +56,17 @@ public:
     swapchain(const swapchain &&) = delete;
     swapchain &operator=(const swapchain &) = delete;
 
+    void create_image_views();
+    void destroy_image_views();
+    void destroy_swapchain();
     void record_buffer(VkCommandBuffer command_buffer, uint32_t image_index);
     void draw_frame();
     void create_sync_objects();
     void create_command_pools();
     void create_command_buffers();
     void create_uniform_buffers();
-    void create_swapchain();
+    void create_swapchain(const VkExtent2D &new_extent = {0, 0});
+    void recreate_swapchain();
     void create_surface();
     void record_all_command_buffers();
     // geters
@@ -70,7 +75,7 @@ public:
     VkQueue *get_transfer_queue();
     size_t get_max_frames_in_flight();
     VkCommandPool &get_command_pool(pool_type type);
-    std::vector<VkImageView> get_swapchain_imageveiws();
+    std::vector<VkImageView> &get_swapchain_imageveiws();
     VkSurfaceKHR get_surface();
     VkExtent2D get_extent();
     VkSurfaceFormatKHR get_surface_format();

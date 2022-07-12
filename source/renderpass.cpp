@@ -6,7 +6,7 @@
 
 // std
 #include <stdexcept>
-#include<array>
+#include <array>
 
 VkRenderPass &renderpass::get_vk_handle()
 {
@@ -15,7 +15,7 @@ VkRenderPass &renderpass::get_vk_handle()
 
 renderpass::renderpass(vulkan_context *vk_cont) : _vk_context{vk_cont}
 {
-    _depth_buffer = std::make_unique<depth_buffer>(_vk_context);
+    create_depth_buffer();
 }
 void renderpass::create_renderpass()
 {
@@ -53,23 +53,33 @@ void renderpass::create_renderpass()
     subpuss_info.pColorAttachments = &color_attachment_ref;
     subpuss_info.pDepthStencilAttachment = &depth_attachment_ref;
 
-    VkSubpassDependency dependency{};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependency.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
-    dependency.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
+    VkSubpassDependency dependency_befor{};
+    dependency_befor.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency_befor.dstSubpass = 0;
+    dependency_befor.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependency_befor.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependency_befor.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+    dependency_befor.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
+
+    VkSubpassDependency dependency_post{};
+    dependency_post.srcSubpass = 0;
+    dependency_post.dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependency_post.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependency_post.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependency_post.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+    dependency_post.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
 
     std::array<VkAttachmentDescription, 2> attachments = {color_attachment, depth_attachment};
+    std::array<VkSubpassDependency, 2>
+            dependencies = {dependency_befor, dependency_post};
     VkRenderPassCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     info.attachmentCount = attachments.size();
     info.pAttachments = attachments.data();
     info.subpassCount = 1;
     info.pSubpasses = &subpuss_info;
-    info.dependencyCount = 1;
-    info.pDependencies = &dependency;
+    info.dependencyCount = dependencies.size();
+    info.pDependencies = dependencies.data();
     if (vkCreateRenderPass(_vk_context->get_logical_device().get_vk_handler(), &info, nullptr, &_renderpass) != VK_SUCCESS)
         throw std::runtime_error("failed to create renderpass");
 }
@@ -82,7 +92,7 @@ renderpass::~renderpass()
     }
     vkDestroyRenderPass(_vk_context->get_logical_device().get_vk_handler(), _renderpass, nullptr);
 }
-std::vector<VkFramebuffer> renderpass::get_framebuffers()
+std::vector<VkFramebuffer> &renderpass::get_framebuffers()
 {
     return swapchain_framebuffers;
 }
@@ -106,4 +116,31 @@ void renderpass::create_framebuffers()
         if (vkCreateFramebuffer(_vk_context->get_logical_device().get_vk_handler(), &framebuffer_info, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS)
             throw std::runtime_error("failed to create framebuffer");
     }
+}
+
+void renderpass::recreate_framebuffers()
+{
+    for (auto &framebuffer : swapchain_framebuffers)
+    {
+        vkDestroyFramebuffer(_vk_context->get_logical_device().get_vk_handler(), framebuffer, nullptr);
+    }
+    create_framebuffers();
+}
+
+void renderpass::destroy_framebuffers()
+{
+    for (auto framebuffer : swapchain_framebuffers)
+    {
+        vkDestroyFramebuffer(_vk_context->get_logical_device().get_vk_handler(), framebuffer, nullptr);
+    }
+}
+
+void renderpass::create_depth_buffer()
+{
+    _depth_buffer = std::make_unique<depth_buffer>(_vk_context);
+}
+
+void renderpass::destroy_depth_buffer()
+{
+    _depth_buffer = nullptr;
 }

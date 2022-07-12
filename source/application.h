@@ -23,6 +23,7 @@ public:
     application(int width, int height, std::string app_name, char *app_path);
     //geters
     Window *get_window();
+    vk_engine &get_vk_engine();
     app_state &get_app_state();
     application_file_system &get_file_system();
     problems &get_problems();
