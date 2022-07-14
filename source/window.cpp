@@ -2,6 +2,7 @@
 #include <application.h>
 // 3dparty
 #include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 
 // std
 #include <string>
@@ -17,7 +18,7 @@ Window::Window(int w, int h, std::string name)
     glfwSetFramebufferSizeCallback(_window, resizeCallBack);
     glfwSetCursorPosCallback(_window, cursorMovedCallBack);
     glfwSetWindowUserPointer(_window, this);
-    // glfwetMouseButtonCallback(_window, mauseButtonCallback);
+    glfwSetMouseButtonCallback(_window, mauseButtonCallback);
 }
 
 void Window::run()
@@ -51,11 +52,24 @@ void Window::resizeCallBack(GLFWwindow *window, int width, int height)
 
 void Window::cursorMovedCallBack(GLFWwindow *window, double width, double height)
 {
-    std::cout << "cursor is resized with " << width << " and " << height << std::endl;
-    (void)window;
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+    application *p_app = reinterpret_cast<application *>(glfwGetWindowUserPointer(window));
+    Window &win = *p_app->get_window();
+    win.current_event = ((glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) ? true : false);
+    glm::vec3 new_mouse_pos = {width, height, 0};
+    if (win.prev_event && win.current_event)
     {
+        auto past_mouse_pos = win.mouse_pos;
+        auto delta = (new_mouse_pos - past_mouse_pos);
+        win.delta += glm::vec3(delta.y, -delta.x, 0.0f);
+        win.mouse_pos = {width, height, 0};
     }
+    else if (win.prev_event == false && win.current_event == true)
+    {
+        win.mouse_pos = {width, height, 0};
+    }
+    std::cout
+        << "[MOUSE EVENT] delta " << p_app->get_window()->delta.x << " " << p_app->get_window()->delta.y << '\n';
+    win.prev_event = win.current_event;
 }
 
 glm::vec2 Window::get_cursor_pos()
@@ -81,7 +95,6 @@ void Window::mauseButtonCallback(GLFWwindow *window, int button, int action, int
     (void)window;
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
-        std::cout << "[MOUSE EVENT] button was pressed" << std::endl;
     }
     (void)mods;
 }

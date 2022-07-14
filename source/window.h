@@ -4,9 +4,15 @@
 //
 // 3dparty
 #include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #define GLFW_INCLUDE_VULKAN
 
 #include <GLFW/glfw3.h>
+
+struct pos
+{
+    int x, y;
+};
 
 class Window
 {
@@ -21,6 +27,12 @@ public:
     // seters
     void set_user_pointer(void *pointer);
 
+    glm::vec3 mouse_pos = {0, 0, 0};
+    glm::vec3 delta = {0, 0, 0};
+    //FIXME
+    bool prev_event = false;
+    bool current_event = false;
+    //
     // geters
     glm::vec2 get_cursor_pos();
     uint32_t get_height();

@@ -15,7 +15,8 @@
 #include <string.h>
 #include <chrono>
 
-extAndLayerInfo vulkan_context::getExtAndLayersInfo() noexcept
+extAndLayerInfo
+vulkan_context::getExtAndLayersInfo() noexcept
 {
     extAndLayerInfo info{};
     info.extCount = required_extantions.size();
@@ -172,6 +173,7 @@ vulkan_context::vulkan_context(Window &wnd, bool is_debug_en)
 #ifdef DEBUG
     debugMessenger = std::make_unique<debug_messenger>(instance);
 #endif
+    cam = {0.0f, 0.0f, -2.5f, 1};
     create_surface();
     initPhysicalDevice();
     createLogicalDevice();
@@ -396,15 +398,22 @@ void vulkan_context::ubos_init()
 
 void vulkan_context::update_ubo(uint32_t current_frame)
 {
-    static auto start_time = std::chrono::high_resolution_clock::now();
+    // static auto start_time = std::chrono::high_resolution_clock::now();
     uniform_buffer_object ubo{};
-    auto current_time = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
-    (void)time;
+    // auto current_time = std::chrono::high_resolution_clock::now();
+    // float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
     ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(_interface->get_rotation_state().z), glm::vec3(0.0f, 0.0f, 1.0f)) *
                 glm::rotate(glm::mat4(1.0f), glm::radians(_interface->get_rotation_state().y), glm::vec3(0.0f, 1.0f, 0.0f)) *
                 glm::rotate(glm::mat4(1.0f), glm::radians(_interface->get_rotation_state().x), glm::vec3(1.0f, 0.0f, 0.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(.8f, 0.0f, 0.0f), glm::vec3(0, 0, 1));
+    // ubo.model = glm::mat4(1.f);
+    auto c_delta = window.delta;
+    auto camera_rotation = glm::mat4(1.0f);
+    camera_rotation = glm::rotate(camera_rotation, glm::radians(c_delta.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    camera_rotation = glm::rotate(camera_rotation, glm::radians(c_delta.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    camera_rotation = glm::rotate(camera_rotation, glm::radians(c_delta.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    // ubo.view = glm::lookAt(glm::vec3((camera_rotation * this->cam)), glm::vec3(.8f, 0.0f, 0.0f), glm::vec3(0, 0, 1));
+    ubo.view = glm::translate(glm::mat4(1.0f), {0.f, 0.f, -2.5f}) * camera_rotation;
     ubo.proj = glm::perspective(glm::radians(45.0f), _swapchain->get_extent().width / (float)_swapchain->get_extent().height, 0.1f, 10.0f);
     ubo.proj[1][1] *= -1;
     auto data = std::vector<uniform_buffer_object>{ubo};

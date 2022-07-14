@@ -5,8 +5,10 @@
 #include <renderpass.h>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 #include <interface.h>
+#include <camera.h>
 
 // std
 #include <vector>
@@ -107,6 +109,7 @@ public:
     void destroy_ubos();
     void destroy_descriptor_sets();
     void destroy_current_swapchain();
+    glm::vec4 cam;
     //
     // seters
     template <typename T>
