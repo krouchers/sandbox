@@ -413,7 +413,7 @@ void vulkan_context::update_ubo(uint32_t current_frame)
     camera_rotation = glm::rotate(camera_rotation, glm::radians(c_delta.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // ubo.view = glm::lookAt(glm::vec3((camera_rotation * this->cam)), glm::vec3(.8f, 0.0f, 0.0f), glm::vec3(0, 0, 1));
-    ubo.view = glm::translate(glm::mat4(1.0f), {0.f, 0.f, -2.5f}) * camera_rotation;
+    ubo.view = glm::translate(glm::mat4(1.0f), {0.5f + -window.translation.y / 100.f, -window.translation.x / 100.f, window.scroll}) * camera_rotation;
     ubo.proj = glm::perspective(glm::radians(45.0f), _swapchain->get_extent().width / (float)_swapchain->get_extent().height, 0.1f, 10.0f);
     ubo.proj[1][1] *= -1;
     auto data = std::vector<uniform_buffer_object>{ubo};

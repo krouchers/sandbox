@@ -224,9 +224,10 @@ namespace gui
 
     void interface::create_gui_layout()
     {
+        auto [width, height] = _vk_engine->get_vk_context()->get_swapchain().get_extent();
         app_state &app_state = _app.get_app_state();
         ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize({(float)1280, (float)0});
+        ImGui::SetNextWindowSize({static_cast<float>(width), (float)0});
         if (main_window_active)
         {
             ImGui::Begin(
@@ -237,8 +238,6 @@ namespace gui
             if (ImGui::BeginMenuBar())
                 if (ImGui::BeginMenu("Задачи"))
                 {
-                    ImGui::SetNextWindowPos(ImVec2(0, 26));
-                    ImGui::SetNextWindowSize(ImVec2(400, 504));
                     if (ImGui::MenuItem("Куб"))
                     {
                         app_state.current_problem = problems_list::CUBE;
@@ -279,6 +278,8 @@ namespace gui
             ImGui::EndMenuBar();
             ImGui::End();
 
+            ImGui::SetNextWindowPos(ImVec2(0, 26));
+            ImGui::SetNextWindowSize({400, (4.f / 5.f) * height - 26});
             if (1)
             {
                 if (ImGui::Begin("Условие", &first_problem, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
@@ -287,8 +288,8 @@ namespace gui
                     ImGui::End();
                 }
 
-                ImGui::SetNextWindowPos(ImVec2(0, 530));
-                ImGui::SetNextWindowSize(ImVec2(400, 500));
+                ImGui::SetNextWindowPos(ImVec2(0, (4.f / 5.f) * height));
+                ImGui::SetNextWindowSize(ImVec2(400, (1.f / 5.f) * height));
                 ImGui::Begin("Повернуть фигуру вокруг: ", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
                 ImGui::Text("Повернуть фигуру вокруг");
                 ImGui::SliderFloat("оси X", &(*_rot_state).x, 0, 360);
@@ -297,7 +298,7 @@ namespace gui
                 ImGui::End();
             }
 
-            ImGui::SetNextWindowPos({1000, 600});
+            ImGui::SetNextWindowPos({width - 280.f, height - 120.f});
             ImGui::SetNextWindowSize({280, 120});
             ImGui::Begin("Ответ", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
             ImGui::Text("Ответ:");
