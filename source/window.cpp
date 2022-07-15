@@ -56,30 +56,26 @@ void Window::cursorMovedCallBack(GLFWwindow *window, double width, double height
 {
     application *p_app = reinterpret_cast<application *>(glfwGetWindowUserPointer(window));
     Window &win = *p_app->get_window();
+    win.current_event = ((glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) ? true : false);
+    glm::vec3 new_mouse_pos = {width, height, 0};
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT))
     {
-        win.current_event = ((glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) ? true : false);
-        glm::vec3 new_mouse_pos = {width, height, 0};
         if (win.prev_event && win.current_event)
         {
             auto past_mouse_pos = win.mouse_pos;
             auto delta = (new_mouse_pos - past_mouse_pos);
             win.delta += glm::vec3(delta.y, -delta.x, 0.0f);
-            win.mouse_pos = {width, height, 0};
+            win.mouse_pos = new_mouse_pos;
         }
         else if (win.prev_event == false && win.current_event == true)
         {
-            win.mouse_pos = {width, height, 0};
+            win.mouse_pos = new_mouse_pos;
         }
-        std::cout
-            << "[MOUSE EVENT] delta " << p_app->get_window()->delta.x << " " << p_app->get_window()->delta.y << '\n';
-        win.prev_event = win.current_event;
+        win.mouse_pos = new_mouse_pos;
     }
-
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE))
+    else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE))
     {
         win.current_event = ((glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) ? true : false);
-        glm::vec3 new_mouse_pos = {width, height, 0};
         if (win.prev_event && win.current_event)
         {
             auto past_mouse_pos = win.mouse_pos;
@@ -93,8 +89,10 @@ void Window::cursorMovedCallBack(GLFWwindow *window, double width, double height
         }
         std::cout
             << "[MOUSE EVENT] middle delta " << p_app->get_window()->translation.x << " " << p_app->get_window()->translation.y << '\n';
-        win.prev_event = win.current_event;
-        }
+        win.mouse_pos = new_mouse_pos;
+    }
+
+    win.prev_event = win.current_event;
 }
 
 glm::vec2 Window::get_cursor_pos()

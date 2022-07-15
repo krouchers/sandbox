@@ -283,7 +283,8 @@ void swapchain::create_image_views()
         subresourceRange.layerCount = 1;
         create_info.subresourceRange = subresourceRange;
 
-        if(vkCreateImageView(_vk_context.get_logical_device().get_vk_handler(), &create_info, nullptr, &swapchainImageViews[i]) != VK_SUCCESS){
+        if (vkCreateImageView(_vk_context.get_logical_device().get_vk_handler(), &create_info, nullptr, &swapchainImageViews[i]) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create image view");
         }
     }
@@ -347,7 +348,15 @@ void swapchain::record_buffer(VkCommandBuffer command_buffer, uint32_t image_ind
     vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
     vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _vk_context.get_pipeline().get_pipeline_layout(),
                             0, 1, &_vk_context.get_descriptor_sets()[image_index], 0, nullptr);
-
+    auto &scissors = _vk_context.get_pipeline().get_scissors() = {
+        {0, 0},
+        {_vk_context.get_swapchain().get_extent().width,
+         _vk_context.get_swapchain().get_extent().height}};
+    vkCmdSetScissor(command_buffer, 0, 1, &scissors);
+    auto &viewport = _vk_context.get_pipeline().get_viewport();
+    viewport.height = _vk_context.get_swapchain().get_extent().height;
+    viewport.width = _vk_context.get_swapchain().get_extent().width;
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
     vkCmdDrawIndexed(command_buffer, _vk_context.get_index_buffer().get_buffer_size() / sizeof(uint32_t), 1, 0, 0, 0);
     vkCmdEndRenderPass(command_buffer);
     if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS)

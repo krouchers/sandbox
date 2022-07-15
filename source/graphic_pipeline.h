@@ -8,6 +8,8 @@ class graphic_pipeline
     vulkan_context &_vk_context;
     VkPipelineLayout _pipeline_layout;
     VkDescriptorSetLayout _descriptor_layout;
+    VkViewport m_viewport;
+    VkRect2D m_scissors;
     VkShaderModule create_shader_module(std::vector<char> shader_binary_file);
 
 public:
@@ -25,6 +27,8 @@ public:
     VkPipeline get_vk_handle();
     std::vector<uniform_buffer_object> &get_ubos();
     VkPipelineLayout &get_pipeline_layout();
+    VkViewport &get_viewport();
+    VkRect2D &get_scissors();
     //
     std::vector<char> read_shader_file(const char *file_name);
 };

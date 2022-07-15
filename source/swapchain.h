@@ -26,6 +26,8 @@ class swapchain
     vulkan_context &_vk_context;
     VkSwapchainKHR _swapchain;
     VkExtent2D _extent;
+    VkViewport m_viewport;
+    VkRect2D m_scissors;
     uint32_t _image_count;
     VkPresentModeKHR _present_mode;
     std::vector<uint32_t> _family_indices;

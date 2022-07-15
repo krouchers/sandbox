@@ -1,9 +1,10 @@
 #include <graphic_pipeline.h>
+#include <buffer.h>
 // std
 #include <fstream>
+#include <array>
 #include <iostream>
 #include <stdexcept>
-#include <buffer.h>
 
 graphic_pipeline::graphic_pipeline(vulkan_context &vk_cont) : _vk_context{vk_cont}
 {
@@ -71,24 +72,22 @@ void graphic_pipeline::create_graphic_pipeline()
     input_assembly_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     input_assembly_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
-    VkViewport view_port{};
-    view_port.x = 0;
-    view_port.y = 0;
-    view_port.width = _vk_context.get_swapchain().get_extent().width;
-    view_port.height = _vk_context.get_swapchain().get_extent().height;
-    view_port.minDepth = 0.0;
-    view_port.maxDepth = 1.0;
+    m_viewport.x = 0;
+    m_viewport.y = 0;
+    m_viewport.width = _vk_context.get_swapchain().get_extent().width;
+    m_viewport.height = _vk_context.get_swapchain().get_extent().height;
+    m_viewport.minDepth = 0.0;
+    m_viewport.maxDepth = 1.0;
 
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = _vk_context.get_swapchain().get_extent();
+    m_scissors.offset = {0, 0};
+    m_scissors.extent = _vk_context.get_swapchain().get_extent();
 
     VkPipelineViewportStateCreateInfo viewport_info{};
     viewport_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewport_info.viewportCount = 1;
-    viewport_info.pViewports = &view_port;
+    viewport_info.pViewports = &m_viewport;
     viewport_info.scissorCount = 1;
-    viewport_info.pScissors = &scissor;
+    viewport_info.pScissors = &m_scissors;
 
     VkPipelineRasterizationStateCreateInfo rasterization_info{};
     rasterization_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -130,6 +129,12 @@ void graphic_pipeline::create_graphic_pipeline()
     depth_info.depthTestEnable = VK_TRUE;
     depth_info.depthWriteEnable = VK_TRUE;
     depth_info.depthCompareOp = VK_COMPARE_OP_LESS;
+    std::array<VkDynamicState, 2> dynamic_states{VK_DYNAMIC_STATE_SCISSOR,
+                                                 VK_DYNAMIC_STATE_VIEWPORT};
+    VkPipelineDynamicStateCreateInfo dynamic_info{};
+    dynamic_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamic_info.dynamicStateCount = dynamic_states.size();
+    dynamic_info.pDynamicStates = dynamic_states.data();
 
     VkGraphicsPipelineCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -145,6 +150,7 @@ void graphic_pipeline::create_graphic_pipeline()
     info.pDepthStencilState = &depth_info;
     info.pRasterizationState = &rasterization_info;
     info.pMultisampleState = &multisample_info;
+    info.pDynamicState = &dynamic_info;
 
     if (vkCreateGraphicsPipelines(_vk_context.get_logical_device().get_vk_handler(), nullptr, 1, &info, nullptr, &_pipeline) != VK_SUCCESS)
         throw std::runtime_error("failed to create graphic pipeline");
@@ -204,4 +210,13 @@ void graphic_pipeline::create_descriptors()
 VkPipelineLayout &graphic_pipeline::get_pipeline_layout()
 {
     return _pipeline_layout;
+}
+
+VkViewport &graphic_pipeline::get_viewport()
+{
+    return m_viewport;
+}
+VkRect2D &graphic_pipeline::get_scissors()
+{
+    return m_scissors;
 }
